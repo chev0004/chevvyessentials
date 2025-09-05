@@ -16,8 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ExampleMod implements ModInitializer {
     public static final String MOD_ID = "modid";
