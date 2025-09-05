@@ -4,7 +4,6 @@ import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.block.BlockState;
-import net.minecraft.network.packet.s2c.play.PositionFlag;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -52,7 +51,7 @@ public class ExampleMod implements ModInitializer {
 
                         BlockPos home = homes.get(player.getUuid());
                         if (home != null) {
-                            ServerWorld world = (ServerWorld) player.getWorld();
+                            ServerWorld world = player.getWorld();
 
                             // Get the block state and its collision shape at the home position
                             BlockState homeBlockState = world.getBlockState(home);
