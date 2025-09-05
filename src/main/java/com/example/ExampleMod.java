@@ -54,8 +54,9 @@ public class ExampleMod implements ModInitializer {
                             double topY = home.getY() + collisionShape.getMax(Direction.Axis.Y);
 
                             player.teleport(world, home.getX() + 0.5, topY, home.getZ() + 0.5, Collections.emptySet(), player.getYaw(), player.getPitch(), false);
+                            player.fallDistance = 0;
+                            player.sendAbilitiesUpdate();
                             player.sendMessage(Text.literal("Teleported home!"), false);
-
                         } else {
                             player.sendMessage(Text.literal("No home set! Use /sethome first."), false);
                         }
