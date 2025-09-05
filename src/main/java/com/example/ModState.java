@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -20,9 +21,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ModState {
 
-    private static final Map<UUID, BlockPos> homes = new ConcurrentHashMap<>();
+    private static final Map<UUID, Map<String, BlockPos>> homes = new ConcurrentHashMap<>();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Type HOMES_TYPE = new TypeToken<HashMap<UUID, BlockPos>>() {}.getType();
+    private static final Type HOMES_TYPE = new TypeToken<HashMap<UUID, HashMap<String, BlockPos>>>() {}.getType();
     private static Path stateFile;
 
     public static void initialize() {
@@ -35,13 +36,14 @@ public class ModState {
         try {
             if (Files.exists(stateFile)) {
                 FileReader reader = new FileReader(stateFile.toFile());
-                Map<UUID, BlockPos> loadedHomes = GSON.fromJson(reader, HOMES_TYPE);
+                Map<UUID, Map<String, BlockPos>> loadedHomes = GSON.fromJson(reader, HOMES_TYPE);
                 if (loadedHomes != null) {
                     homes.clear();
-                    homes.putAll(loadedHomes);
+                    // Ensure the inner map is also concurrent for thread safety
+                    loadedHomes.forEach((uuid, playerHomes) -> homes.put(uuid, new ConcurrentHashMap<>(playerHomes)));
                 }
                 reader.close();
-                ExampleMod.LOGGER.info("Homes loaded successfully for " + homes.size() + " players.");
+                ExampleMod.LOGGER.info("Homes loaded successfully.");
             }
         } catch (IOException e) {
             ExampleMod.LOGGER.error("Failed to load homes data", e);
@@ -52,13 +54,30 @@ public class ModState {
         save();
     }
 
-    public static BlockPos getHome(UUID playerUuid) {
-        return homes.get(playerUuid);
+    public static BlockPos getHome(UUID playerUuid, String name) {
+        Map<String, BlockPos> playerHomes = homes.get(playerUuid);
+        if (playerHomes != null) {
+            return playerHomes.get(name);
+        }
+        return null;
     }
 
-    public static void setHome(UUID playerUuid, BlockPos pos) {
-        homes.put(playerUuid, pos);
+    public static Map<String, BlockPos> getHomes(UUID playerUuid) {
+        return homes.getOrDefault(playerUuid, Collections.emptyMap());
+    }
+
+    public static void setHome(UUID playerUuid, String name, BlockPos pos) {
+        homes.computeIfAbsent(playerUuid, k -> new ConcurrentHashMap<>()).put(name, pos);
         save();
+    }
+
+    public static boolean removeHome(UUID playerUuid, String name) {
+        Map<String, BlockPos> playerHomes = homes.get(playerUuid);
+        if (playerHomes != null && playerHomes.remove(name) != null) {
+            save();
+            return true;
+        }
+        return false;
     }
 
     public static void save() {
