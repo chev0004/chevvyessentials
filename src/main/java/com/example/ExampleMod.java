@@ -39,7 +39,6 @@ public class ExampleMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        ModConfig.initialize();
         ModState.initialize();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
@@ -63,18 +62,12 @@ public class ExampleMod implements ModInitializer {
                                 }
                                 final String homeName = StringArgumentType.getString(context, "name");
 
-                                // --- MODIFIED FOR DIMENSIONS ---
-                                // Get the player's current position, world, and dimension key
                                 BlockPos currentPos = player.getBlockPos();
                                 ServerWorld currentWorld = player.getWorld();
                                 RegistryKey<World> currentDimension = currentWorld.getRegistryKey();
 
-                                // Create a new Home object with all the required data
                                 Home newHome = new Home(currentPos, currentDimension);
-
-                                // Save the new Home object
                                 ModState.setHome(player.getUuid(), homeName, newHome);
-                                // --- END MODIFICATION ---
 
                                 sendBilingualMessage(player, "ホーム「" + homeName + "」が設定されました！", "Home '" + homeName + "' set!");
                                 return 1;
@@ -87,23 +80,17 @@ public class ExampleMod implements ModInitializer {
                                 ServerPlayerEntity player = context.getSource().getPlayer();
                                 if (player == null) return 0;
                                 final String homeName = StringArgumentType.getString(context, "name");
-
-                                // --- MODIFIED FOR DIMENSIONS ---
-                                // Retrieve the full Home object, not just a BlockPos
                                 Home home = ModState.getHome(player.getUuid(), homeName);
 
                                 if (home != null) {
-                                    // Get the target world from the server using the saved dimension key
                                     ServerWorld targetWorld = Objects.requireNonNull(player.getServer()).getWorld(home.dimension());
                                     BlockPos targetPos = home.pos();
 
-                                    // Check if the world still exists (it could have been removed)
                                     if (targetWorld == null) {
                                         sendBilingualMessage(player, "ホームが存在するワールドが見つかりません。", "The world for this home could not be found.");
                                         return 0;
                                     }
 
-                                    // The rest of the logic remains the same, but uses targetWorld and targetPos
                                     BlockState homeBlockState = targetWorld.getBlockState(targetPos);
                                     VoxelShape collisionShape = homeBlockState.getCollisionShape(targetWorld, targetPos);
                                     double topY = targetPos.getY();
@@ -113,14 +100,11 @@ public class ExampleMod implements ModInitializer {
                                             topY += maxY;
                                         }
                                     }
-
-                                    // Teleport the player to the correct world and coordinates
                                     player.teleport(targetWorld, targetPos.getX() + 0.5, topY, targetPos.getZ() + 0.5, Collections.emptySet(), player.getYaw(), player.getPitch(), false);
                                     sendBilingualMessage(player, "ホーム「" + homeName + "」にテレポートしました！", "Teleported to home '" + homeName + "'!");
                                 } else {
                                     sendBilingualMessage(player, "ホーム「" + homeName + "」が見つかりませんでした！", "Home '" + homeName + "' not found!");
                                 }
-                                // --- END MODIFICATION ---
                                 return 1;
                             }))
                     .executes(context -> {
@@ -151,7 +135,6 @@ public class ExampleMod implements ModInitializer {
                         if (safePosition.isPresent()) {
                             Vec3d pos = safePosition.get();
                             player.teleport(world, pos.getX(), pos.getY(), pos.getZ(), Collections.emptySet(), player.getYaw(), player.getPitch(), false);
-
                             sendBilingualMessage(player, "ホームベッドにテレポートしました！", "Teleported to your home bed!");
                             return 1;
                         } else {
@@ -160,8 +143,52 @@ public class ExampleMod implements ModInitializer {
                         }
                     })
             );
-            // ... (delhome and homes commands remain the same) ...
+
+            dispatcher.register(CommandManager.literal("delhome")
+                    .then(CommandManager.argument("name", StringArgumentType.word())
+                            .executes(context -> {
+                                ServerPlayerEntity player = context.getSource().getPlayer();
+                                if (player == null) return 0;
+
+                                final String homeName = StringArgumentType.getString(context, "name");
+                                if (ModState.removeHome(player.getUuid(), homeName)) {
+                                    sendBilingualMessage(player,
+                                            "ホーム「" + homeName + "」を削除しました。",
+                                            "Home '" + homeName + "' removed."
+                                    );
+                                } else {
+                                    sendBilingualMessage(player,
+                                            "ホーム「" + homeName + "」が見つかりませんでした。",
+                                            "Home '" + homeName + "' not found."
+                                    );
+                                }
+                                return 1;
+                            }))
+            );
+
+            dispatcher.register(CommandManager.literal("homes")
+                    .executes(context -> {
+                        ServerPlayerEntity player = context.getSource().getPlayer();
+                        if (player == null) return 0;
+
+                        Map<String, Home> playerHomes = ModState.getHomes(player.getUuid());
+                        if (playerHomes.isEmpty()) {
+                            sendBilingualMessage(player,
+                                    "ホームが設定されていません。/sethome <name> を使用してください。",
+                                    "You have no homes set. Use /sethome <name>."
+                            );
+                        } else {
+                            String homeList = String.join(", ", playerHomes.keySet());
+                            sendBilingualMessage(player,
+                                    "ホーム一覧: " + homeList,
+                                    "Your homes: " + homeList
+                            );
+                        }
+                        return 1;
+                    })
+            );
         });
+
         LOGGER.info("Hello Fabric world! Homes are now persistent and cross-dimensional.");
     }
 
