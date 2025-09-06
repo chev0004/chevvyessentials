@@ -4,12 +4,14 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.BedBlock; // Import BedBlock
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 
 public class ExampleMod implements ModInitializer {
@@ -90,8 +93,6 @@ public class ExampleMod implements ModInitializer {
 
                                     player.teleport(world, home.getX() + 0.5, topY, home.getZ() + 0.5,
                                             Collections.emptySet(), player.getYaw(), player.getPitch(), false);
-                                    player.fallDistance = 0;
-                                    player.sendAbilitiesUpdate();
                                     sendBilingualMessage(player,
                                             "ホーム「" + homeName + "」にテレポートしました！",
                                             "Teleported to home '" + homeName + "'!"
@@ -109,69 +110,61 @@ public class ExampleMod implements ModInitializer {
                         ServerPlayerEntity player = context.getSource().getPlayer();
                         if (player == null) return 0;
 
-                        // Get player's respawn info
-                        ServerPlayerEntity.Respawn respawn = player.getRespawn();
-                        if (respawn == null) {
+                        assert player.getRespawn() != null;
+                        BlockPos bedPos = player.getRespawn().pos();
+                        ServerWorld world = Objects.requireNonNull(player.getServer()).getWorld(player.getRespawn().dimension());
+
+                        if (bedPos == null || world == null) {
                             sendBilingualMessage(player,
                                     "ホームベッドが設定されていません。ベッドを使ってスポーンポイントを設定してください。",
                                     "You have no home bed set. Use a bed to set your spawn point."
                             );
-                            System.out.println(player.getRespawn());
                             return 0;
                         }
 
-                        // Get dimension/world
-                        ServerWorld world = Objects.requireNonNull(player.getServer()).getWorld(respawn.dimension());
-                        if (world == null) {
+                        // Get the block state at the respawn position
+                        BlockState bedState = world.getBlockState(bedPos);
+                        Optional<Vec3d> safePosition;
+
+                        // Check if the block is a bed and find a safe wake-up spot
+                        if (bedState.getBlock() instanceof BedBlock) {
+                            safePosition = BedBlock.findWakeUpPosition(player.getType(), world, bedPos, bedState.get(BedBlock.FACING), player.getRespawn().angle());
+                        } else {
+                            // Fallback for non-bed spawn points (like respawn anchors)
+                            // This will just check the two blocks above the anchor.
+                            // A more robust solution could check surrounding blocks.
+                            if (!world.getBlockState(bedPos.up()).isOpaque() && !world.getBlockState(bedPos.up(2)).isOpaque()) {
+                                safePosition = Optional.of(Vec3d.ofBottomCenter(bedPos).add(0, 0.2, 0));
+                            } else {
+                                safePosition = Optional.empty();
+                            }
+                        }
+
+
+                        if (safePosition.isPresent()) {
+                            Vec3d pos = safePosition.get();
+                            // Teleport the player to the safe position
+                            player.teleport(
+                                    world,
+                                    pos.getX(),
+                                    pos.getY(),
+                                    pos.getZ(),
+                                    Collections.emptySet(),
+                                    player.getYaw(),
+                                    player.getPitch(),
+                                    false
+                            );
+
+                            sendBilingualMessage(player, "ホームベッドにテレポートしました！", "Teleported to your home bed!");
+                            return 1;
+                        } else {
+                            // No safe position found
                             sendBilingualMessage(player,
-                                    "ホームベッドが無効なディメンションにあります。",
-                                    "Your home bed is in an invalid dimension."
+                                    "ホームベッドがふさがれているか、見つかりません。",
+                                    "Your home bed is obstructed or missing."
                             );
                             return 0;
                         }
-
-                        // Bed position & safety check
-                        BlockPos bedPos = respawn.pos();
-                        if (bedPos == null) {
-                            sendBilingualMessage(player,
-                                    "ホームベッドが見つかりません。",
-                                    "Your home bed is missing."
-                            );
-                            return 0;
-                        }
-
-//                        BlockPos below = bedPos.down();
-//                        if (!world.getBlockState(below).isSolidBlock(world, below)
-//                                || !world.isAir(bedPos)
-//                                || !world.isAir(bedPos.up())) {
-//                            player.sendMessage(Text.literal("Your home bed is obstructed or missing."), false);
-//                            return 0;
-//                        }
-
-                        // Teleport
-                        BlockState blockState = world.getBlockState(bedPos);
-                        VoxelShape collisionShape = blockState.getCollisionShape(world, bedPos);
-
-                        double safeY = bedPos.getY();
-                        if (!collisionShape.isEmpty()) {
-                            safeY += collisionShape.getMax(Direction.Axis.Y);
-                        }
-
-                        player.teleport(
-                                world,
-                                bedPos.getX() + 1,
-                                safeY,
-                                bedPos.getZ() + 0.5,
-                                Collections.emptySet(),
-                                player.getYaw(),
-                                player.getPitch(),
-                                false
-                        );
-
-                        player.fallDistance = 0;
-                        player.sendAbilitiesUpdate();
-                        sendBilingualMessage(player, "ホームベッドにテレポートしました！", "Teleported to your home bed!");
-                        return 1;
                     })
 
             );
