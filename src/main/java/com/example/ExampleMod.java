@@ -62,7 +62,7 @@ public class ExampleMod implements ModInitializer {
                                 }
                                 final String homeName = StringArgumentType.getString(context, "name");
 
-                                BlockPos currentPos = player.getBlockPos();
+                                Vec3d currentPos = player.getPos();
                                 ServerWorld currentWorld = player.getWorld();
                                 RegistryKey<World> currentDimension = currentWorld.getRegistryKey();
 
@@ -84,23 +84,14 @@ public class ExampleMod implements ModInitializer {
 
                                 if (home != null) {
                                     ServerWorld targetWorld = Objects.requireNonNull(player.getServer()).getWorld(home.dimension());
-                                    BlockPos targetPos = home.pos();
+                                    Vec3d targetPos = home.pos();
 
                                     if (targetWorld == null) {
                                         sendBilingualMessage(player, "ホームが存在するワールドが見つかりません。", "The world for this home could not be found.");
                                         return 0;
                                     }
 
-                                    BlockState homeBlockState = targetWorld.getBlockState(targetPos);
-                                    VoxelShape collisionShape = homeBlockState.getCollisionShape(targetWorld, targetPos);
-                                    double topY = targetPos.getY();
-                                    if (!collisionShape.isEmpty()) {
-                                        double maxY = collisionShape.getMax(Direction.Axis.Y);
-                                        if (!Double.isInfinite(maxY) && !Double.isNaN(maxY)) {
-                                            topY += maxY;
-                                        }
-                                    }
-                                    player.teleport(targetWorld, targetPos.getX() + 0.5, topY, targetPos.getZ() + 0.5, Collections.emptySet(), player.getYaw(), player.getPitch(), false);
+                                    player.teleport(targetWorld, targetPos.getX(), targetPos.getY(), targetPos.getZ(), Collections.emptySet(), player.getYaw(), player.getPitch(), false);
                                     sendBilingualMessage(player, "ホーム「" + homeName + "」にテレポートしました！", "Teleported to home '" + homeName + "'!");
                                 } else {
                                     sendBilingualMessage(player, "ホーム「" + homeName + "」が見つかりませんでした！", "Home '" + homeName + "' not found!");

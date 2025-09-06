@@ -8,7 +8,7 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 import java.io.FileReader;
@@ -25,40 +25,33 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ModState {
 
-    // The map now stores Home objects instead of BlockPos
     private static final Map<UUID, Map<String, Home>> homes = new ConcurrentHashMap<>();
 
-    // Custom Gson instance with a new adapter for the Home class
     private static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Home.class, (JsonSerializer<Home>) (home, type, ctx) -> {
                 JsonObject obj = new JsonObject();
-
-                // Serialize BlockPos
                 JsonObject posObj = new JsonObject();
                 posObj.addProperty("x", home.pos().getX());
                 posObj.addProperty("y", home.pos().getY());
                 posObj.addProperty("z", home.pos().getZ());
                 obj.add("pos", posObj);
-
-                // Serialize dimension RegistryKey as a string
                 obj.addProperty("dimension", home.dimension().getValue().toString());
                 return obj;
             })
             .registerTypeAdapter(Home.class, (JsonDeserializer<Home>) (json, type, ctx) -> {
                 JsonObject obj = json.getAsJsonObject();
-
-                // Deserialize BlockPos
                 JsonObject posObj = obj.getAsJsonObject("pos");
-                BlockPos pos = new BlockPos(posObj.get("x").getAsInt(), posObj.get("y").getAsInt(), posObj.get("z").getAsInt());
-
-                // Deserialize dimension string back into a RegistryKey
+                Vec3d pos = new Vec3d(
+                        posObj.get("x").getAsDouble(),
+                        posObj.get("y").getAsDouble(),
+                        posObj.get("z").getAsDouble()
+                );
                 RegistryKey<World> dimension = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(obj.get("dimension").getAsString()));
                 return new Home(pos, dimension);
             })
             .setPrettyPrinting()
             .create();
 
-    // The Type token is updated to reflect the new map structure
     private static final Type HOMES_TYPE =
             new TypeToken<HashMap<UUID, HashMap<String, Home>>>() {}.getType();
 
@@ -92,7 +85,6 @@ public class ModState {
         save();
     }
 
-    // Method signatures are updated to use the Home class
     public static Home getHome(UUID playerUuid, String name) {
         return getHomes(playerUuid).get(name);
     }
