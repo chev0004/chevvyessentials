@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.List; // Import List
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,6 +26,20 @@ import java.util.Optional;
 public class ExampleMod implements ModInitializer {
     public static final String MOD_ID = "modid";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+    // A list of relative positions to check for a safe spawn, in order of preference.
+    private static final List<BlockPos> SPAWN_OFFSETS = List.of(
+            // Cardinal Directions
+            new BlockPos(0, 0, 1),
+            new BlockPos(0, 0, -1),
+            new BlockPos(1, 0, 0),
+            new BlockPos(-1, 0, 0),
+            // Diagonals
+            new BlockPos(1, 0, 1),
+            new BlockPos(1, 0, -1),
+            new BlockPos(-1, 0, 1),
+            new BlockPos(-1, 0, -1)
+    );
 
     @Override
     public void onInitialize() {
@@ -110,7 +125,14 @@ public class ExampleMod implements ModInitializer {
                         ServerPlayerEntity player = context.getSource().getPlayer();
                         if (player == null) return 0;
 
-                        assert player.getRespawn() != null;
+                        if (player.getRespawn() == null) {
+                            sendBilingualMessage(player,
+                                    "ホームベッドが設定されていません。ベッドを使ってスポーンポイントを設定してください。",
+                                    "You have no home bed set. Use a bed to set your spawn point."
+                            );
+                            return 0;
+                        }
+
                         BlockPos bedPos = player.getRespawn().pos();
                         ServerWorld world = Objects.requireNonNull(player.getServer()).getWorld(player.getRespawn().dimension());
 
@@ -131,13 +153,8 @@ public class ExampleMod implements ModInitializer {
                             safePosition = BedBlock.findWakeUpPosition(player.getType(), world, bedPos, bedState.get(BedBlock.FACING), player.getRespawn().angle());
                         } else {
                             // Fallback for non-bed spawn points (like respawn anchors)
-                            // This will just check the two blocks above the anchor.
-                            // A more robust solution could check surrounding blocks.
-                            if (!world.getBlockState(bedPos.up()).isOpaque() && !world.getBlockState(bedPos.up(2)).isOpaque()) {
-                                safePosition = Optional.of(Vec3d.ofBottomCenter(bedPos).add(0, 0.2, 0));
-                            } else {
-                                safePosition = Optional.empty();
-                            }
+                            // This will search the surrounding blocks for a safe 2-block-high space.
+                            safePosition = findSafeSpawnAround(bedPos, world);
                         }
 
 
@@ -216,6 +233,35 @@ public class ExampleMod implements ModInitializer {
 
         LOGGER.info("Hello Fabric world! Homes are now persistent.");
     }
+
+    /**
+     * Searches for a safe 2-block high space around a central point, like a respawn anchor.
+     * @param centerPos The position of the anchor/block.
+     * @param world The world to search in.
+     * @return An Optional Vec3d of a safe teleport location, or empty if none is found.
+     */
+    private Optional<Vec3d> findSafeSpawnAround(BlockPos centerPos, ServerWorld world) {
+        for (BlockPos offset : SPAWN_OFFSETS) {
+            BlockPos candidatePos = centerPos.add(offset);
+
+            // Check 1: The floor must be solid to stand on.
+            BlockPos floorPos = candidatePos.down();
+            if (world.getBlockState(floorPos).isSideSolidFullSquare(world, floorPos, Direction.UP)) {
+
+                // Check 2 & 3: The space for the player's body and head must be empty (no collision).
+                VoxelShape bodyShape = world.getBlockState(candidatePos).getCollisionShape(world, candidatePos);
+                VoxelShape headShape = world.getBlockState(candidatePos.up()).getCollisionShape(world, candidatePos.up());
+
+                if (bodyShape.isEmpty() && headShape.isEmpty()) {
+                    // This position is safe. Return its center coordinates for teleporting.
+                    return Optional.of(Vec3d.ofBottomCenter(candidatePos));
+                }
+            }
+        }
+        // No safe position was found after checking all offsets.
+        return Optional.empty();
+    }
+
 
     /**
      * Sends a two-line message to the player, with the first line in Japanese
