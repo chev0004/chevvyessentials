@@ -115,7 +115,7 @@ public class ExampleMod implements ModInitializer {
                         BlockState stateAtSpawn = world.getBlockState(bedPos);
                         if (!stateAtSpawn.isIn(BlockTags.BEDS) && !(stateAtSpawn.getBlock() instanceof RespawnAnchorBlock)) {
                             // The bed or anchor is gone. Inform the player.
-                            sendBilingualMessage(player, "ホームベッドが見つかりません。", "Your home bed is missing.");
+                            sendBilingualMessage(player, "ホームベッドが破壊されたか、見つかりません。", "Your home bed was destroyed or is missing.");
                             // As a helpful measure, clear the invalid spawn point for the player
                             player.setSpawnPoint(null, false);
                             return 0; // Indicate failure
