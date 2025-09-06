@@ -4,8 +4,12 @@ import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -13,48 +17,62 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ModState {
 
-    private static final Map<UUID, Map<String, BlockPos>> homes = new ConcurrentHashMap<>();
+    // The map now stores Home objects instead of BlockPos
+    private static final Map<UUID, Map<String, Home>> homes = new ConcurrentHashMap<>();
 
-    // Custom Gson with BlockPos serializer/deserializer
+    // Custom Gson instance with a new adapter for the Home class
     private static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(BlockPos.class, (JsonSerializer<BlockPos>) (pos, type, ctx) -> {
+            .registerTypeAdapter(Home.class, (JsonSerializer<Home>) (home, type, ctx) -> {
                 JsonObject obj = new JsonObject();
-                obj.addProperty("x", pos.getX());
-                obj.addProperty("y", pos.getY());
-                obj.addProperty("z", pos.getZ());
+
+                // Serialize BlockPos
+                JsonObject posObj = new JsonObject();
+                posObj.addProperty("x", home.pos().getX());
+                posObj.addProperty("y", home.pos().getY());
+                posObj.addProperty("z", home.pos().getZ());
+                obj.add("pos", posObj);
+
+                // Serialize dimension RegistryKey as a string
+                obj.addProperty("dimension", home.dimension().getValue().toString());
                 return obj;
             })
-            .registerTypeAdapter(BlockPos.class, (JsonDeserializer<BlockPos>) (json, type, ctx) -> {
+            .registerTypeAdapter(Home.class, (JsonDeserializer<Home>) (json, type, ctx) -> {
                 JsonObject obj = json.getAsJsonObject();
-                int x = obj.get("x").getAsInt();
-                int y = obj.get("y").getAsInt();
-                int z = obj.get("z").getAsInt();
-                return new BlockPos(x, y, z);
+
+                // Deserialize BlockPos
+                JsonObject posObj = obj.getAsJsonObject("pos");
+                BlockPos pos = new BlockPos(posObj.get("x").getAsInt(), posObj.get("y").getAsInt(), posObj.get("z").getAsInt());
+
+                // Deserialize dimension string back into a RegistryKey
+                RegistryKey<World> dimension = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(obj.get("dimension").getAsString()));
+                return new Home(pos, dimension);
             })
             .setPrettyPrinting()
             .create();
 
+    // The Type token is updated to reflect the new map structure
     private static final Type HOMES_TYPE =
-            new TypeToken<HashMap<UUID, HashMap<String, BlockPos>>>() {}.getType();
+            new TypeToken<HashMap<UUID, HashMap<String, Home>>>() {}.getType();
 
     private static Path stateFile;
 
     public static void initialize() {
-        // Get the path to config/modid/homes.json
         Path configDir = FabricLoader.getInstance().getConfigDir().resolve(ExampleMod.MOD_ID);
         stateFile = configDir.resolve("homes.json");
 
         try {
-            // Ensure the directory exists
             Files.createDirectories(configDir);
             if (Files.exists(stateFile)) {
                 try (FileReader reader = new FileReader(stateFile.toFile())) {
-                    Map<UUID, Map<String, BlockPos>> loadedHomes = GSON.fromJson(reader, HOMES_TYPE);
+                    Map<UUID, Map<String, Home>> loadedHomes = GSON.fromJson(reader, HOMES_TYPE);
                     if (loadedHomes != null) {
                         homes.clear();
                         loadedHomes.forEach((uuid, playerHomes) ->
@@ -67,7 +85,6 @@ public class ModState {
             ExampleMod.LOGGER.error("Failed to load homes data", e);
         }
 
-        // Register event to save homes when the server stops
         ServerLifecycleEvents.SERVER_STOPPING.register(ModState::onServerStopping);
     }
 
@@ -75,23 +92,23 @@ public class ModState {
         save();
     }
 
-    public static BlockPos getHome(UUID playerUuid, String name) {
+    // Method signatures are updated to use the Home class
+    public static Home getHome(UUID playerUuid, String name) {
         return getHomes(playerUuid).get(name);
     }
 
-    public static Map<String, BlockPos> getHomes(UUID playerUuid) {
+    public static Map<String, Home> getHomes(UUID playerUuid) {
         return homes.getOrDefault(playerUuid, Collections.emptyMap());
     }
 
-    public static void setHome(UUID playerUuid, String name, BlockPos pos) {
-        homes.computeIfAbsent(playerUuid, k -> new ConcurrentHashMap<>()).put(name, pos);
+    public static void setHome(UUID playerUuid, String name, Home home) {
+        homes.computeIfAbsent(playerUuid, k -> new ConcurrentHashMap<>()).put(name, home);
         save();
     }
 
     public static boolean removeHome(UUID playerUuid, String name) {
-        Map<String, BlockPos> playerHomes = homes.get(playerUuid);
+        Map<String, Home> playerHomes = homes.get(playerUuid);
         if (playerHomes != null && playerHomes.remove(name) != null) {
-            // If the player has no homes left, remove them from the map
             if (playerHomes.isEmpty()) {
                 homes.remove(playerUuid);
             }
