@@ -22,26 +22,19 @@ public class ModState {
 
     // Custom Gson with BlockPos serializer/deserializer
     private static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(BlockPos.class, new JsonSerializer<BlockPos>() {
-                @Override
-                public JsonElement serialize(BlockPos pos, Type type, JsonSerializationContext ctx) {
-                    JsonObject obj = new JsonObject();
-                    obj.addProperty("x", pos.getX());
-                    obj.addProperty("y", pos.getY());
-                    obj.addProperty("z", pos.getZ());
-                    return obj;
-                }
+            .registerTypeAdapter(BlockPos.class, (JsonSerializer<BlockPos>) (pos, type, ctx) -> {
+                JsonObject obj = new JsonObject();
+                obj.addProperty("x", pos.getX());
+                obj.addProperty("y", pos.getY());
+                obj.addProperty("z", pos.getZ());
+                return obj;
             })
-            .registerTypeAdapter(BlockPos.class, new JsonDeserializer<BlockPos>() {
-                @Override
-                public BlockPos deserialize(JsonElement json, Type type, JsonDeserializationContext ctx)
-                        throws JsonParseException {
-                    JsonObject obj = json.getAsJsonObject();
-                    int x = obj.get("x").getAsInt();
-                    int y = obj.get("y").getAsInt();
-                    int z = obj.get("z").getAsInt();
-                    return new BlockPos(x, y, z);
-                }
+            .registerTypeAdapter(BlockPos.class, (JsonDeserializer<BlockPos>) (json, type, ctx) -> {
+                JsonObject obj = json.getAsJsonObject();
+                int x = obj.get("x").getAsInt();
+                int y = obj.get("y").getAsInt();
+                int z = obj.get("z").getAsInt();
+                return new BlockPos(x, y, z);
             })
             .setPrettyPrinting()
             .create();
