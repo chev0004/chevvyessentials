@@ -1,9 +1,9 @@
 package com.example;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 
@@ -13,41 +13,69 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ModState {
 
     private static final Map<UUID, Map<String, BlockPos>> homes = new ConcurrentHashMap<>();
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Type HOMES_TYPE = new TypeToken<HashMap<UUID, HashMap<String, BlockPos>>>() {}.getType();
+
+    // Custom Gson with BlockPos serializer/deserializer
+    private static final Gson GSON = new GsonBuilder()
+            .registerTypeAdapter(BlockPos.class, new JsonSerializer<BlockPos>() {
+                @Override
+                public JsonElement serialize(BlockPos pos, Type type, JsonSerializationContext ctx) {
+                    JsonObject obj = new JsonObject();
+                    obj.addProperty("x", pos.getX());
+                    obj.addProperty("y", pos.getY());
+                    obj.addProperty("z", pos.getZ());
+                    return obj;
+                }
+            })
+            .registerTypeAdapter(BlockPos.class, new JsonDeserializer<BlockPos>() {
+                @Override
+                public BlockPos deserialize(JsonElement json, Type type, JsonDeserializationContext ctx)
+                        throws JsonParseException {
+                    JsonObject obj = json.getAsJsonObject();
+                    int x = obj.get("x").getAsInt();
+                    int y = obj.get("y").getAsInt();
+                    int z = obj.get("z").getAsInt();
+                    return new BlockPos(x, y, z);
+                }
+            })
+            .setPrettyPrinting()
+            .create();
+
+    private static final Type HOMES_TYPE =
+            new TypeToken<HashMap<UUID, HashMap<String, BlockPos>>>() {}.getType();
+
     private static Path stateFile;
 
     public static void initialize() {
-        ServerLifecycleEvents.SERVER_STARTED.register(ModState::onServerStarted);
-        ServerLifecycleEvents.SERVER_STOPPING.register(ModState::onServerStopping);
-    }
+        // Get the path to config/modid/homes.json
+        Path configDir = FabricLoader.getInstance().getConfigDir().resolve(ExampleMod.MOD_ID);
+        stateFile = configDir.resolve("homes.json");
 
-    private static void onServerStarted(MinecraftServer server) {
-        stateFile = server.getSavePath(net.minecraft.util.WorldSavePath.ROOT).resolve(ExampleMod.MOD_ID + ".json");
         try {
+            // Ensure the directory exists
+            Files.createDirectories(configDir);
             if (Files.exists(stateFile)) {
-                FileReader reader = new FileReader(stateFile.toFile());
-                Map<UUID, Map<String, BlockPos>> loadedHomes = GSON.fromJson(reader, HOMES_TYPE);
-                if (loadedHomes != null) {
-                    homes.clear();
-                    // Ensure the inner map is also concurrent for thread safety
-                    loadedHomes.forEach((uuid, playerHomes) -> homes.put(uuid, new ConcurrentHashMap<>(playerHomes)));
+                try (FileReader reader = new FileReader(stateFile.toFile())) {
+                    Map<UUID, Map<String, BlockPos>> loadedHomes = GSON.fromJson(reader, HOMES_TYPE);
+                    if (loadedHomes != null) {
+                        homes.clear();
+                        loadedHomes.forEach((uuid, playerHomes) ->
+                                homes.put(uuid, new ConcurrentHashMap<>(playerHomes)));
+                    }
                 }
-                reader.close();
                 ExampleMod.LOGGER.info("Homes loaded successfully.");
             }
         } catch (IOException e) {
             ExampleMod.LOGGER.error("Failed to load homes data", e);
         }
+
+        // Register event to save homes when the server stops
+        ServerLifecycleEvents.SERVER_STOPPING.register(ModState::onServerStopping);
     }
 
     private static void onServerStopping(MinecraftServer server) {
@@ -55,11 +83,7 @@ public class ModState {
     }
 
     public static BlockPos getHome(UUID playerUuid, String name) {
-        Map<String, BlockPos> playerHomes = homes.get(playerUuid);
-        if (playerHomes != null) {
-            return playerHomes.get(name);
-        }
-        return null;
+        return getHomes(playerUuid).get(name);
     }
 
     public static Map<String, BlockPos> getHomes(UUID playerUuid) {
@@ -74,6 +98,10 @@ public class ModState {
     public static boolean removeHome(UUID playerUuid, String name) {
         Map<String, BlockPos> playerHomes = homes.get(playerUuid);
         if (playerHomes != null && playerHomes.remove(name) != null) {
+            // If the player has no homes left, remove them from the map
+            if (playerHomes.isEmpty()) {
+                homes.remove(playerUuid);
+            }
             save();
             return true;
         }
