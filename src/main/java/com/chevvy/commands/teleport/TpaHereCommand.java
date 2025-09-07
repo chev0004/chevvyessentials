@@ -18,6 +18,12 @@ public class TpaHereCommand {
                 CommandSource.suggestMatching(context.getSource().getServer().getPlayerNames(), builder);
 
         dispatcher.register(CommandManager.literal("tpahere")
+                .executes(context -> {
+                    ServerPlayerEntity player = context.getSource().getPlayer();
+                    if (player == null) return 0;
+                    TpaCommand.sendTpaHelp(player);
+                    return 1;
+                })
                 .then(CommandManager.argument("player", StringArgumentType.word())
                         .suggests(playerSuggestions)
                         .executes(context -> {
@@ -27,31 +33,21 @@ public class TpaHereCommand {
                             String targetName = StringArgumentType.getString(context, "player");
                             ServerPlayerEntity target = Objects.requireNonNull(requester.getServer()).getPlayerManager().getPlayer(targetName);
                             if (target == null) {
-                                CommandUtils.sendBilingual(requester,
-                                        "プレイヤーが見つかりません: " + targetName,
-                                        "Player not found: " + targetName);
+                                CommandUtils.sendBilingual(requester, "プレイヤーが見つかりません: " + targetName, "Player not found: " + targetName);
                                 return 0;
                             }
 
                             if (target.getUuid().equals(requester.getUuid())) {
-                                CommandUtils.sendBilingual(requester,
-                                        "自分自身をここに呼ぶことはできません。",
-                                        "You can’t send a TPAHERE request to yourself.");
+                                CommandUtils.sendBilingual(requester, "自分自身をここに呼ぶことはできません。", "You can’t send a TPAHERE request to yourself.");
                                 return 0;
                             }
 
                             TpaState.createTpaHereRequest(requester, target);
 
-                            CommandUtils.sendBilingual(requester,
-                                    targetName + " にTPAHEREリクエストを送りました。",
-                                    "Sent TPAHERE request to " + targetName);
+                            CommandUtils.sendBilingual(requester, targetName + " にTPAHEREリクエストを送りました。", "Sent TPAHERE request to " + targetName);
 
-                            target.sendMessage(
-                                    Text.literal(requester.getName().getString()
-                                            + " があなたを呼んでいます。/tpa accept または /tpa deny を入力してください。"), false);
-                            target.sendMessage(
-                                    Text.literal(requester.getName().getString()
-                                            + " wants you to teleport to them. Type /tpa accept or /tpa deny."), false);
+                            target.sendMessage(Text.literal(requester.getName().getString() + " があなたを呼んでいます。/tpa accept または /tpa deny を入力してください。"), false);
+                            target.sendMessage(Text.literal(requester.getName().getString() + " wants you to teleport to them. Type /tpa accept or /tpa deny."), false);
 
                             return 1;
                         })
