@@ -38,7 +38,7 @@ public class TpaResponseCommand {
                             }
 
                             source.teleport(
-                                    (ServerWorld) destination.getWorld(),
+                                    destination.getWorld(),
                                     destination.getX(), destination.getY(), destination.getZ(),
                                     Collections.emptySet(),
                                     source.getYaw(), source.getPitch(),

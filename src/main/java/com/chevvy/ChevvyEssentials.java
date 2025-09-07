@@ -6,7 +6,6 @@ import com.chevvy.commands.teleport.TpaHereCommand;
 import com.chevvy.commands.teleport.TpaResponseCommand;
 import com.chevvy.state.HomeState;
 import com.chevvy.config.ModConfig;
-import com.chevvy.state.TpaState;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import org.slf4j.Logger;
