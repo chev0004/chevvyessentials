@@ -1,6 +1,6 @@
 package com.chevvy.commands.homes;
 
-import com.chevvy.state.ModState;
+import com.chevvy.state.HomeState;
 import com.chevvy.Home;
 import com.chevvy.util.CommandUtils;
 import net.minecraft.server.command.CommandManager;
@@ -16,7 +16,7 @@ public class HomesCommand {
                     ServerPlayerEntity player = context.getSource().getPlayer();
                     if (player == null) return 0;
 
-                    Map<String, Home> homes = ModState.getHomes(player.getUuid());
+                    Map<String, Home> homes = HomeState.getHomes(player.getUuid());
                     if (homes.isEmpty()) {
                         CommandUtils.sendBilingual(player,
                                 "ホームが設定されていません。/sethome <name> を使用してください。",

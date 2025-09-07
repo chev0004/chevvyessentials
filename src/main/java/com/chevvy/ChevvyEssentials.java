@@ -1,7 +1,7 @@
 package com.chevvy;
 
 import com.chevvy.commands.homes.*;
-import com.chevvy.state.ModState;
+import com.chevvy.state.HomeState;
 import com.chevvy.config.ModConfig;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -15,7 +15,7 @@ public class ChevvyEssentials implements ModInitializer {
     @Override
     public void onInitialize() {
         ModConfig.initialize();
-        ModState.initialize();
+        HomeState.initialize();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             SetHomeCommand.register(dispatcher);

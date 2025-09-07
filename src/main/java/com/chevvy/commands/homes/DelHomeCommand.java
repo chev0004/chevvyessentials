@@ -1,6 +1,6 @@
 package com.chevvy.commands.homes;
 
-import com.chevvy.state.ModState;
+import com.chevvy.state.HomeState;
 import com.chevvy.util.CommandUtils;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -13,7 +13,7 @@ public class DelHomeCommand {
     public static void register(com.mojang.brigadier.CommandDispatcher<ServerCommandSource> dispatcher) {
         SuggestionProvider<ServerCommandSource> homeSuggestions = (context, builder) -> {
             ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-            return CommandSource.suggestMatching(ModState.getHomes(player.getUuid()).keySet(), builder);
+            return CommandSource.suggestMatching(HomeState.getHomes(player.getUuid()).keySet(), builder);
         };
 
         dispatcher.register(CommandManager.literal("delhome")
@@ -24,7 +24,7 @@ public class DelHomeCommand {
                             if (player == null) return 0;
 
                             String homeName = StringArgumentType.getString(context, "name");
-                            if (ModState.removeHome(player.getUuid(), homeName)) {
+                            if (HomeState.removeHome(player.getUuid(), homeName)) {
                                 CommandUtils.sendBilingual(player,
                                         "ホーム「" + homeName + "」を削除しました。",
                                         "Home '" + homeName + "' removed.");

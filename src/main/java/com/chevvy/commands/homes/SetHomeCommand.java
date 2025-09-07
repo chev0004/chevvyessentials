@@ -1,6 +1,6 @@
 package com.chevvy.commands.homes;
 
-import com.chevvy.state.ModState;
+import com.chevvy.state.HomeState;
 import com.chevvy.config.ModConfig;
 import com.chevvy.Home;
 import com.chevvy.util.CommandUtils;
@@ -24,7 +24,7 @@ public class SetHomeCommand {
                             if (player == null) return 0;
 
                             String homeName = StringArgumentType.getString(context, "name");
-                            Map<String, Home> playerHomes = ModState.getHomes(player.getUuid());
+                            Map<String, Home> playerHomes = HomeState.getHomes(player.getUuid());
 
                             int maxHomes = ModConfig.get().maxHomes;
                             if (!playerHomes.containsKey(homeName) && playerHomes.size() >= maxHomes) {
@@ -39,7 +39,7 @@ public class SetHomeCommand {
                             RegistryKey<World> dimension = world.getRegistryKey();
 
                             Home newHome = new Home(pos, dimension);
-                            ModState.setHome(player.getUuid(), homeName, newHome);
+                            HomeState.setHome(player.getUuid(), homeName, newHome);
 
                             CommandUtils.sendBilingual(player,
                                     "ホーム「" + homeName + "」が設定されました！",
