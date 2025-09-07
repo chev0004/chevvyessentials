@@ -3,6 +3,8 @@ package com.chevvy.commands.teleport;
 import com.chevvy.state.TpaState;
 import com.chevvy.util.CommandUtils;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -12,8 +14,12 @@ import java.util.Objects;
 
 public class TpaCommand {
     public static void register(com.mojang.brigadier.CommandDispatcher<ServerCommandSource> dispatcher) {
+        SuggestionProvider<ServerCommandSource> playerSuggestions = (context, builder) ->
+                CommandSource.suggestMatching(context.getSource().getServer().getPlayerNames(), builder);
+
         dispatcher.register(CommandManager.literal("tpa")
                 .then(CommandManager.argument("player", StringArgumentType.word())
+                        .suggests(playerSuggestions)
                         .executes(context -> {
                             ServerPlayerEntity requester = context.getSource().getPlayer();
                             if (requester == null) return 0;
