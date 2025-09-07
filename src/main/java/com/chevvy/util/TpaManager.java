@@ -7,6 +7,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,37 +36,36 @@ public class TpaManager {
         long currentTime = System.currentTimeMillis();
 
         // Use a copy of the keys to prevent ConcurrentModificationException
-        for (UUID targetUuid : TpaState.getPendingRequests().keySet()) {
-            TpaState.TpaRequest request = TpaState.getRequest(targetUuid);
+        for (UUID targetUuid : new ArrayList<>(TpaState.getPendingRequests().keySet())) {
+            Map<UUID, TpaState.TpaRequest> playerRequests = TpaState.getRequestsForPlayer(targetUuid);
+            if (playerRequests.isEmpty()) continue;
 
-            if (request == null) {
-                continue;
-            }
+            for (UUID requesterUuid : new ArrayList<>(playerRequests.keySet())) {
+                TpaState.TpaRequest request = playerRequests.get(requesterUuid);
+                if (request == null) continue;
 
-            if (currentTime - request.creationTime() > timeoutMillis) {
-                // Remove the request immediately to prevent race conditions
-                TpaState.clearRequest(targetUuid);
+                if (currentTime - request.creationTime() > timeoutMillis) {
+                    // The request has expired, clear it and notify players
+                    TpaState.clearRequest(targetUuid, requesterUuid);
 
-                // Get player names from their profiles for the message
-                String requesterName = Objects.requireNonNull(server.getUserCache()).getByUuid(request.originalRequester())
-                        .map(GameProfile::getName).orElse("Someone");
-                String targetName = server.getUserCache().getByUuid(targetUuid)
-                        .map(GameProfile::getName).orElse("Someone");
+                    String requesterName = Objects.requireNonNull(server.getUserCache()).getByUuid(request.originalRequester())
+                            .map(GameProfile::getName).orElse("Someone");
+                    String targetName = server.getUserCache().getByUuid(targetUuid)
+                            .map(GameProfile::getName).orElse("Someone");
 
-                // Get the online player entities to send them a message
-                ServerPlayerEntity target = server.getPlayerManager().getPlayer(targetUuid);
-                ServerPlayerEntity originalRequester = server.getPlayerManager().getPlayer(request.originalRequester());
+                    ServerPlayerEntity target = server.getPlayerManager().getPlayer(targetUuid);
+                    ServerPlayerEntity originalRequester = server.getPlayerManager().getPlayer(request.originalRequester());
 
-                // Notify players if they are still online
-                if (target != null) {
-                    CommandUtils.sendBilingual(target,
-                            requesterName + " からのTPAリクエストは" + timeoutSeconds + "秒後に期限切れになりました。",
-                            "The TPA request from " + requesterName + " expired after " + timeoutSeconds + " seconds.");
-                }
-                if (originalRequester != null) {
-                    CommandUtils.sendBilingual(originalRequester,
-                            targetName + " へのTPAリクエストは" + timeoutSeconds + "秒後にタイムアウトしました。",
-                            "Your TPA request to " + targetName + " timed out after " + timeoutSeconds + " seconds.");
+                    if (target != null) {
+                        CommandUtils.sendBilingual(target,
+                                requesterName + " からのTPAリクエストは" + timeoutSeconds + "秒後に期限切れになりました。",
+                                "The TPA request from " + requesterName + " expired after " + timeoutSeconds + " seconds.");
+                    }
+                    if (originalRequester != null) {
+                        CommandUtils.sendBilingual(originalRequester,
+                                targetName + " へのTPAリクエストは" + timeoutSeconds + "秒後にタイムアウトしました。",
+                                "Your TPA request to " + targetName + " timed out after " + timeoutSeconds + " seconds.");
+                    }
                 }
             }
         }

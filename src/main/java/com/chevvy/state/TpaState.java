@@ -2,6 +2,7 @@ package com.chevvy.state;
 
 import net.minecraft.server.network.ServerPlayerEntity;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,33 +17,43 @@ public class TpaState {
      */
     public record TpaRequest(UUID originalRequester, UUID sourcePlayer, UUID destinationPlayer, long creationTime) {}
 
-    private static final Map<UUID, TpaRequest> pendingRequests = new ConcurrentHashMap<>();
+    // Maps a target player's UUID to a map of their pending requests.
+    // The inner map keys are the original requesters' UUIDs.
+    private static final Map<UUID, Map<UUID, TpaRequest>> pendingRequests = new ConcurrentHashMap<>();
 
-    /**
-     * Creates a standard TPA request where the 'from' player wishes to teleport to the 'to' player.
-     */
     public static void createTpaRequest(ServerPlayerEntity from, ServerPlayerEntity to) {
         TpaRequest request = new TpaRequest(from.getUuid(), from.getUuid(), to.getUuid(), System.currentTimeMillis());
-        pendingRequests.put(to.getUuid(), request);
+        pendingRequests.computeIfAbsent(to.getUuid(), k -> new ConcurrentHashMap<>()).put(from.getUuid(), request);
     }
 
-    /**
-     * Creates a "TPA Here" request where the 'requester' asks the 'target' to teleport to them.
-     */
     public static void createTpaHereRequest(ServerPlayerEntity requester, ServerPlayerEntity target) {
         TpaRequest request = new TpaRequest(requester.getUuid(), target.getUuid(), requester.getUuid(), System.currentTimeMillis());
-        pendingRequests.put(target.getUuid(), request);
+        pendingRequests.computeIfAbsent(target.getUuid(), k -> new ConcurrentHashMap<>()).put(requester.getUuid(), request);
     }
 
-    public static TpaRequest getRequest(UUID targetUuid) {
-        return pendingRequests.get(targetUuid);
+    public static TpaRequest getRequest(UUID targetUuid, UUID requesterUuid) {
+        Map<UUID, TpaRequest> playerRequests = pendingRequests.get(targetUuid);
+        if (playerRequests != null) {
+            return playerRequests.get(requesterUuid);
+        }
+        return null;
     }
 
-    public static void clearRequest(UUID targetUuid) {
-        pendingRequests.remove(targetUuid);
+    public static Map<UUID, TpaRequest> getRequestsForPlayer(UUID targetUuid) {
+        return pendingRequests.getOrDefault(targetUuid, Collections.emptyMap());
     }
 
-    public static Map<UUID, TpaRequest> getPendingRequests() {
+    public static void clearRequest(UUID targetUuid, UUID requesterUuid) {
+        Map<UUID, TpaRequest> playerRequests = pendingRequests.get(targetUuid);
+        if (playerRequests != null) {
+            playerRequests.remove(requesterUuid);
+            if (playerRequests.isEmpty()) {
+                pendingRequests.remove(targetUuid);
+            }
+        }
+    }
+
+    public static Map<UUID, Map<UUID, TpaRequest>> getPendingRequests() {
         return pendingRequests;
     }
 }
