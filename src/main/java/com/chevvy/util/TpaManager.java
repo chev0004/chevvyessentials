@@ -1,8 +1,7 @@
-package com.chevvy;
+package com.chevvy.util;
 
 import com.chevvy.config.ModConfig;
 import com.chevvy.state.TpaState;
-import com.chevvy.util.CommandUtils;
 import com.mojang.authlib.GameProfile;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;

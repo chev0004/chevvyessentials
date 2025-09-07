@@ -6,6 +6,7 @@ import com.chevvy.commands.teleport.TpaHereCommand;
 import com.chevvy.commands.teleport.TpaResponseCommand;
 import com.chevvy.config.ModConfig;
 import com.chevvy.state.HomeState;
+import com.chevvy.util.TpaManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import org.slf4j.Logger;
@@ -19,7 +20,7 @@ public class ChevvyEssentials implements ModInitializer {
     public void onInitialize() {
         ModConfig.initialize();
         HomeState.initialize();
-        com.chevvy.TpaManager.initialize();
+        TpaManager.initialize();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             LOGGER.info("Registering commands for " + MOD_ID);
