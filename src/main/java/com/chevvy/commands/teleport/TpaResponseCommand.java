@@ -92,7 +92,7 @@ public class TpaResponseCommand {
         if (source == null || destination == null) {
             CommandUtils.sendBilingual(acceptor, "リクエストに関係するプレイヤーが見つかりません。", "A player involved in the request could not be found.");
         } else {
-            source.teleport((ServerWorld) destination.getWorld(), destination.getX(), destination.getY(), destination.getZ(),
+            source.teleport(destination.getWorld(), destination.getX(), destination.getY(), destination.getZ(),
                     Collections.emptySet(), source.getYaw(), source.getPitch(), false);
             CommandUtils.sendBilingual(source, destination.getName().getString() + " にテレポートしました！", "Teleported to " + destination.getName().getString() + "!");
             CommandUtils.sendBilingual(destination, source.getName().getString() + " がテレポートしてきました！", source.getName().getString() + " has teleported to you!");

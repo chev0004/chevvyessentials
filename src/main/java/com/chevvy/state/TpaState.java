@@ -31,14 +31,6 @@ public class TpaState {
         pendingRequests.computeIfAbsent(target.getUuid(), k -> new ConcurrentHashMap<>()).put(requester.getUuid(), request);
     }
 
-    public static TpaRequest getRequest(UUID targetUuid, UUID requesterUuid) {
-        Map<UUID, TpaRequest> playerRequests = pendingRequests.get(targetUuid);
-        if (playerRequests != null) {
-            return playerRequests.get(requesterUuid);
-        }
-        return null;
-    }
-
     public static Map<UUID, TpaRequest> getRequestsForPlayer(UUID targetUuid) {
         return pendingRequests.getOrDefault(targetUuid, Collections.emptyMap());
     }
