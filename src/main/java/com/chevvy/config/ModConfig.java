@@ -1,5 +1,6 @@
-package com.example;
+package com.chevvy.config;
 
+import com.chevvy.ChevvyEssentials;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
@@ -13,7 +14,7 @@ import java.nio.file.Path;
 public class ModConfig {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve(ExampleMod.MOD_ID);
+    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve(ChevvyEssentials.MOD_ID);
     private static final Path CONFIG_FILE = CONFIG_PATH.resolve("config.json");
 
     private static ConfigData config;
@@ -47,7 +48,7 @@ public class ModConfig {
                 save();
             }
         } catch (IOException e) {
-            ExampleMod.LOGGER.error("Failed to initialize mod config", e);
+            ChevvyEssentials.LOGGER.error("Failed to initialize mod config", e);
             // Fallback to default config if loading fails
             config = new ConfigData();
         }
@@ -57,7 +58,7 @@ public class ModConfig {
         try (FileWriter writer = new FileWriter(CONFIG_FILE.toFile())) {
             GSON.toJson(config, writer);
         } catch (IOException e) {
-            ExampleMod.LOGGER.error("Failed to save mod config", e);
+            ChevvyEssentials.LOGGER.error("Failed to save mod config", e);
         }
     }
 

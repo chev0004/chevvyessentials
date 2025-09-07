@@ -1,4 +1,4 @@
-package com.example;
+package com.chevvy;
 
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.math.Vec3d;

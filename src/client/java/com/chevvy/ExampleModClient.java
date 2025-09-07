@@ -1,4 +1,4 @@
-package com.example;
+package com.chevvy;
 
 import net.fabricmc.api.ClientModInitializer;
 

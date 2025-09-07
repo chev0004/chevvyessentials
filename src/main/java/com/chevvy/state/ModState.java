@@ -1,5 +1,7 @@
-package com.example;
+package com.chevvy.state;
 
+import com.chevvy.ChevvyEssentials;
+import com.chevvy.Home;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -58,7 +60,7 @@ public class ModState {
     private static Path stateFile;
 
     public static void initialize() {
-        Path configDir = FabricLoader.getInstance().getConfigDir().resolve(ExampleMod.MOD_ID);
+        Path configDir = FabricLoader.getInstance().getConfigDir().resolve(ChevvyEssentials.MOD_ID);
         stateFile = configDir.resolve("homes.json");
 
         try {
@@ -72,10 +74,10 @@ public class ModState {
                                 homes.put(uuid, new ConcurrentHashMap<>(playerHomes)));
                     }
                 }
-                ExampleMod.LOGGER.info("Homes loaded successfully.");
+                ChevvyEssentials.LOGGER.info("Homes loaded successfully.");
             }
         } catch (IOException e) {
-            ExampleMod.LOGGER.error("Failed to load homes data", e);
+            ChevvyEssentials.LOGGER.error("Failed to load homes data", e);
         }
 
         ServerLifecycleEvents.SERVER_STOPPING.register(ModState::onServerStopping);
@@ -117,7 +119,7 @@ public class ModState {
         try (FileWriter writer = new FileWriter(stateFile.toFile())) {
             GSON.toJson(homes, writer);
         } catch (IOException e) {
-            ExampleMod.LOGGER.error("Failed to save homes data", e);
+            ChevvyEssentials.LOGGER.error("Failed to save homes data", e);
         }
     }
 }
