@@ -19,37 +19,33 @@ public class ModConfig {
 
     private static ConfigData config;
 
-    // Defines the structure of your config file
     public static class ConfigData {
         public int maxHomes;
+        public int tpaTimeoutSeconds;
 
-        // Set default values here
         private ConfigData() {
             this.maxHomes = 5;
+            this.tpaTimeoutSeconds = 60;
         }
     }
 
     public static void initialize() {
         try {
-            // Create the mod's config directory if it doesn't exist
             Files.createDirectories(CONFIG_PATH);
 
             if (Files.exists(CONFIG_FILE)) {
                 try (FileReader reader = new FileReader(CONFIG_FILE.toFile())) {
                     config = GSON.fromJson(reader, ConfigData.class);
-                    // In case a new config option was added and the file exists
                     if (config == null) {
                         config = new ConfigData();
                     }
                 }
             } else {
-                // Create a new config file with default values
                 config = new ConfigData();
                 save();
             }
         } catch (IOException e) {
             ChevvyEssentials.LOGGER.error("Failed to initialize mod config", e);
-            // Fallback to default config if loading fails
             config = new ConfigData();
         }
     }
@@ -64,7 +60,6 @@ public class ModConfig {
 
     public static ConfigData get() {
         if (config == null) {
-            // This should not happen if initialize() is called correctly, but it's a safe fallback
             initialize();
         }
         return config;

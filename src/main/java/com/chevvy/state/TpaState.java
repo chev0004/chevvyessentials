@@ -12,8 +12,9 @@ public class TpaState {
      * @param originalRequester The player who initiated the /tpa or /tpahere command.
      * @param sourcePlayer The player who will be teleported.
      * @param destinationPlayer The player who is the destination of the teleport.
+     * @param creationTime The time the request was created, in milliseconds.
      */
-    public record TpaRequest(UUID originalRequester, UUID sourcePlayer, UUID destinationPlayer) {}
+    public record TpaRequest(UUID originalRequester, UUID sourcePlayer, UUID destinationPlayer, long creationTime) {}
 
     private static final Map<UUID, TpaRequest> pendingRequests = new ConcurrentHashMap<>();
 
@@ -21,7 +22,7 @@ public class TpaState {
      * Creates a standard TPA request where the 'from' player wishes to teleport to the 'to' player.
      */
     public static void createTpaRequest(ServerPlayerEntity from, ServerPlayerEntity to) {
-        TpaRequest request = new TpaRequest(from.getUuid(), from.getUuid(), to.getUuid());
+        TpaRequest request = new TpaRequest(from.getUuid(), from.getUuid(), to.getUuid(), System.currentTimeMillis());
         pendingRequests.put(to.getUuid(), request);
     }
 
@@ -29,7 +30,7 @@ public class TpaState {
      * Creates a "TPA Here" request where the 'requester' asks the 'target' to teleport to them.
      */
     public static void createTpaHereRequest(ServerPlayerEntity requester, ServerPlayerEntity target) {
-        TpaRequest request = new TpaRequest(requester.getUuid(), target.getUuid(), requester.getUuid());
+        TpaRequest request = new TpaRequest(requester.getUuid(), target.getUuid(), requester.getUuid(), System.currentTimeMillis());
         pendingRequests.put(target.getUuid(), request);
     }
 
@@ -39,5 +40,9 @@ public class TpaState {
 
     public static void clearRequest(UUID targetUuid) {
         pendingRequests.remove(targetUuid);
+    }
+
+    public static Map<UUID, TpaRequest> getPendingRequests() {
+        return pendingRequests;
     }
 }

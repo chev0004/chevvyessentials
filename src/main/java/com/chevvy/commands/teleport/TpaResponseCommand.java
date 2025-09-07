@@ -5,6 +5,7 @@ import com.chevvy.util.CommandUtils;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -37,7 +38,7 @@ public class TpaResponseCommand {
                             }
 
                             source.teleport(
-                                    destination.getWorld(),
+                                    (ServerWorld) destination.getWorld(),
                                     destination.getX(), destination.getY(), destination.getZ(),
                                     Collections.emptySet(),
                                     source.getYaw(), source.getPitch(),
