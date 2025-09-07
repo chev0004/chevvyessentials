@@ -8,6 +8,8 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 public class DelHomeCommand {
     public static void register(com.mojang.brigadier.CommandDispatcher<ServerCommandSource> dispatcher) {
@@ -26,12 +28,22 @@ public class DelHomeCommand {
                             String homeName = StringArgumentType.getString(context, "name");
                             if (HomeState.removeHome(player.getUuid(), homeName)) {
                                 CommandUtils.sendBilingual(player,
-                                        "ホーム「" + homeName + "」を削除しました。",
-                                        "Home '" + homeName + "' removed.");
+                                        Text.empty().append(Text.literal("ホーム「")).formatted(Formatting.GRAY)
+                                                .append(Text.literal(homeName).formatted(Formatting.GREEN))
+                                                .append(Text.literal("」を削除しました。").formatted(Formatting.GRAY)),
+                                        Text.empty().append(Text.literal("Home '")).formatted(Formatting.GRAY)
+                                                .append(Text.literal(homeName)).formatted(Formatting.GREEN)
+                                                .append(Text.literal("' removed.")).formatted(Formatting.GRAY)
+                                        );
                             } else {
                                 CommandUtils.sendBilingual(player,
-                                        "ホーム「" + homeName + "」が見つかりませんでした。",
-                                        "Home '" + homeName + "' not found.");
+                                        Text.empty().append(Text.literal("ホーム「")).formatted(Formatting.GRAY)
+                                                .append(Text.literal(homeName)).formatted(Formatting.GREEN)
+                                                .append(Text.literal("」が見つかりませんでした。")).formatted(Formatting.GRAY),
+                                        Text.empty().append(Text.literal("Home '")).formatted(Formatting.GRAY)
+                                                .append(Text.literal(homeName)).formatted(Formatting.GREEN)
+                                                .append(Text.literal("' not found.")).formatted(Formatting.GRAY)
+                                );
                             }
                             return 1;
                         })

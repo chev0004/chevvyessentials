@@ -9,6 +9,7 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import java.util.Objects;
 
@@ -33,21 +34,37 @@ public class TpaHereCommand {
                             String targetName = StringArgumentType.getString(context, "player");
                             ServerPlayerEntity target = Objects.requireNonNull(requester.getServer()).getPlayerManager().getPlayer(targetName);
                             if (target == null) {
-                                CommandUtils.sendBilingual(requester, "プレイヤーが見つかりません: " + targetName, "Player not found: " + targetName);
+                                CommandUtils.sendBilingual(requester,
+                                        Text.empty().append(Text.literal("プレイヤーが見つかりません: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)),
+                                        Text.empty().append(Text.literal("Player not found: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)));
                                 return 0;
                             }
 
                             if (target.getUuid().equals(requester.getUuid())) {
-                                CommandUtils.sendBilingual(requester, "自分自身をここに呼ぶことはできません。", "You can’t send a TPAHERE request to yourself.");
+                                CommandUtils.sendBilingual(requester,
+                                        Text.literal("自分自身をここに呼ぶことはできません。").formatted(Formatting.GRAY),
+                                        Text.literal("You can’t send a TPAHERE request to yourself.").formatted(Formatting.GRAY));
                                 return 0;
                             }
 
                             TpaState.createTpaHereRequest(requester, target);
 
-                            CommandUtils.sendBilingual(requester, targetName + " にTPAHEREリクエストを送りました。", "Sent TPAHERE request to " + targetName);
+                            CommandUtils.sendBilingual(requester,
+                                    Text.empty().append(Text.literal(targetName).formatted(Formatting.GREEN)).append(Text.literal("さんにTPAHEREリクエストを送りました。").formatted(Formatting.GRAY)),
+                                    Text.empty().append(Text.literal("Sent TPAHERE request to ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)));
 
-                            target.sendMessage(Text.literal(requester.getName().getString() + " があなたを呼んでいます。/tpa accept または /tpa deny を入力してください。"), false);
-                            target.sendMessage(Text.literal(requester.getName().getString() + " wants you to teleport to them. Type /tpa accept or /tpa deny."), false);
+                            target.sendMessage(Text.empty().append(Text.literal(requester.getName().getString()).formatted(Formatting.GREEN))
+                                    .append(Text.literal("さんがあなたを呼んでいます。").formatted(Formatting.GRAY))
+                                    .append(Text.literal("/tpa accept").formatted(Formatting.AQUA))
+                                    .append(Text.literal(" または ").formatted(Formatting.GRAY))
+                                    .append(Text.literal("/tpa deny").formatted(Formatting.AQUA))
+                                    .append(Text.literal(" を入力してください。").formatted(Formatting.GRAY)));
+                            target.sendMessage(Text.empty().append(Text.literal(requester.getName().getString()).formatted(Formatting.GREEN))
+                                    .append(Text.literal(" wants you to teleport to them. Type ").formatted(Formatting.GRAY))
+                                    .append(Text.literal("/tpa accept").formatted(Formatting.AQUA))
+                                    .append(Text.literal(" or ").formatted(Formatting.GRAY))
+                                    .append(Text.literal("/tpa deny").formatted(Formatting.AQUA))
+                                    .append(Text.literal(".").formatted(Formatting.GRAY)));
 
                             return 1;
                         })

@@ -1,16 +1,18 @@
 package com.chevvy.commands.homes;
 
-import com.chevvy.state.HomeState;
-import com.chevvy.config.ModConfig;
 import com.chevvy.Home;
+import com.chevvy.config.ModConfig;
+import com.chevvy.state.HomeState;
 import com.chevvy.util.CommandUtils;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.world.World;
 
 import java.util.Map;
@@ -29,8 +31,13 @@ public class SetHomeCommand {
                             int maxHomes = ModConfig.get().maxHomes;
                             if (!playerHomes.containsKey(homeName) && playerHomes.size() >= maxHomes) {
                                 CommandUtils.sendBilingual(player,
-                                        "ホームの最大数（" + maxHomes + "）に達しました。",
-                                        "You have reached the maximum number of homes (" + maxHomes + ").");
+                                        Text.empty().append(Text.literal("ホームの最大数（").formatted(Formatting.GRAY))
+                                                .append(Text.literal(String.valueOf(maxHomes)).formatted(Formatting.GREEN))
+                                                .append(Text.literal("）に達しました。").formatted(Formatting.GRAY)),
+                                        Text.empty().append(Text.literal("You have reached the maximum number of homes (").formatted(Formatting.GRAY))
+                                                .append(Text.literal(String.valueOf(maxHomes)).formatted(Formatting.GREEN))
+                                                .append(Text.literal(").").formatted(Formatting.GRAY))
+                                );
                                 return 0;
                             }
 
@@ -42,8 +49,13 @@ public class SetHomeCommand {
                             HomeState.setHome(player.getUuid(), homeName, newHome);
 
                             CommandUtils.sendBilingual(player,
-                                    "ホーム「" + homeName + "」が設定されました！",
-                                    "Home '" + homeName + "' set!");
+                                    Text.empty().append(Text.literal("ホーム「").formatted(Formatting.GRAY))
+                                            .append(Text.literal(homeName).formatted(Formatting.GREEN))
+                                            .append(Text.literal("」が設定されました！").formatted(Formatting.GRAY)),
+                                    Text.empty().append(Text.literal("Home '").formatted(Formatting.GRAY))
+                                            .append(Text.literal(homeName).formatted(Formatting.GREEN))
+                                            .append(Text.literal("' set!").formatted(Formatting.GRAY))
+                            );
                             return 1;
                         })
                 )

@@ -3,7 +3,6 @@ package com.chevvy;
 import com.chevvy.commands.homes.*;
 import com.chevvy.commands.teleport.TpaCommand;
 import com.chevvy.commands.teleport.TpaHereCommand;
-import com.chevvy.commands.teleport.TpaResponseCommand;
 import com.chevvy.config.ModConfig;
 import com.chevvy.state.HomeState;
 import com.chevvy.util.TpaManager;
@@ -34,7 +33,6 @@ public class ChevvyEssentials implements ModInitializer {
             // Teleport Commands
             TpaCommand.register(dispatcher);
             TpaHereCommand.register(dispatcher);
-            TpaResponseCommand.register(dispatcher);
         });
 
         LOGGER.info(MOD_ID + " has been initialized!");

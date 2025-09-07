@@ -6,6 +6,8 @@ import com.mojang.authlib.GameProfile;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -58,13 +60,29 @@ public class TpaManager {
 
                     if (target != null) {
                         CommandUtils.sendBilingual(target,
-                                requesterName + " からのTPAリクエストは" + timeoutSeconds + "秒後に期限切れになりました。",
-                                "The TPA request from " + requesterName + " expired after " + timeoutSeconds + " seconds.");
+                                Text.empty().append(Text.literal(requesterName).formatted(Formatting.GREEN))
+                                        .append(Text.literal("さんからのTPAリクエストは").formatted(Formatting.GRAY))
+                                        .append(Text.literal(String.valueOf(timeoutSeconds)).formatted(Formatting.GREEN))
+                                        .append(Text.literal("秒後に期限切れになりました。").formatted(Formatting.GRAY)),
+                                Text.empty().append(Text.literal("The TPA request from ").formatted(Formatting.GRAY))
+                                        .append(Text.literal(requesterName).formatted(Formatting.GREEN))
+                                        .append(Text.literal(" expired after ").formatted(Formatting.GRAY))
+                                        .append(Text.literal(String.valueOf(timeoutSeconds)).formatted(Formatting.GREEN))
+                                        .append(Text.literal(" seconds.").formatted(Formatting.GRAY))
+                        );
                     }
                     if (originalRequester != null) {
                         CommandUtils.sendBilingual(originalRequester,
-                                targetName + " へのTPAリクエストは" + timeoutSeconds + "秒後にタイムアウトしました。",
-                                "Your TPA request to " + targetName + " timed out after " + timeoutSeconds + " seconds.");
+                                Text.empty().append(Text.literal(targetName).formatted(Formatting.GREEN))
+                                        .append(Text.literal("さんへのTPAリクエストは").formatted(Formatting.GRAY))
+                                        .append(Text.literal(String.valueOf(timeoutSeconds)).formatted(Formatting.GREEN))
+                                        .append(Text.literal("秒後にタイムアウトしました。").formatted(Formatting.GRAY)),
+                                Text.empty().append(Text.literal("Your TPA request to ").formatted(Formatting.GRAY))
+                                        .append(Text.literal(targetName).formatted(Formatting.GREEN))
+                                        .append(Text.literal(" timed out after ").formatted(Formatting.GRAY))
+                                        .append(Text.literal(String.valueOf(timeoutSeconds)).formatted(Formatting.GREEN))
+                                        .append(Text.literal(" seconds.").formatted(Formatting.GRAY))
+                        );
                     }
                 }
             }
