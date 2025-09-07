@@ -1,14 +1,17 @@
 package com.example;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BedBlock;
 import net.minecraft.block.RespawnAnchorBlock;
+import net.minecraft.command.CommandSource;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
@@ -42,6 +45,13 @@ public class ExampleMod implements ModInitializer {
         ModState.initialize();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+
+            SuggestionProvider<ServerCommandSource> homeSuggestionProvider = (context, builder) -> {
+                ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+                Map<String, Home> playerHomes = ModState.getHomes(player.getUuid());
+                return CommandSource.suggestMatching(playerHomes.keySet(), builder);
+            };
+
             dispatcher.register(CommandManager.literal("sethome")
                     .executes(context -> {
                         ServerPlayerEntity player = context.getSource().getPlayer();
@@ -76,6 +86,7 @@ public class ExampleMod implements ModInitializer {
 
             dispatcher.register(CommandManager.literal("home")
                     .then(CommandManager.argument("name", StringArgumentType.word())
+                            .suggests(homeSuggestionProvider)
                             .executes(context -> {
                                 ServerPlayerEntity player = context.getSource().getPlayer();
                                 if (player == null) return 0;
@@ -137,6 +148,7 @@ public class ExampleMod implements ModInitializer {
 
             dispatcher.register(CommandManager.literal("delhome")
                     .then(CommandManager.argument("name", StringArgumentType.word())
+                            .suggests(homeSuggestionProvider)
                             .executes(context -> {
                                 ServerPlayerEntity player = context.getSource().getPlayer();
                                 if (player == null) return 0;
