@@ -1,7 +1,7 @@
 package com.chevvy.commands.homes;
 
 import com.chevvy.Home;
-import com.chevvy.state.ModState;
+import com.chevvy.state.HomeState;
 import com.chevvy.util.CommandUtils;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -32,7 +32,7 @@ public class HomeCommand {
     public static void register(com.mojang.brigadier.CommandDispatcher<ServerCommandSource> dispatcher) {
         SuggestionProvider<ServerCommandSource> homeSuggestions = (context, builder) -> {
             ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-            Map<String, Home> homes = ModState.getHomes(player.getUuid());
+            Map<String, Home> homes = HomeState.getHomes(player.getUuid());
             return CommandSource.suggestMatching(homes.keySet(), builder);
         };
 
@@ -80,7 +80,7 @@ public class HomeCommand {
                             if (player == null) return 0;
 
                             String homeName = StringArgumentType.getString(context, "name");
-                            Home home = ModState.getHome(player.getUuid(), homeName);
+                            Home home = HomeState.getHome(player.getUuid(), homeName);
 
                             if (home != null) {
                                 ServerWorld world = Objects.requireNonNull(player.getServer()).getWorld(home.dimension());
