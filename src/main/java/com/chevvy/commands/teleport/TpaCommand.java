@@ -34,13 +34,15 @@ public class TpaCommand {
                                 return 0;
                             }
 
-                            TpaState.createRequest(requester, target);
+                            TpaState.createTpaRequest(requester, target);
                             CommandUtils.sendBilingual(requester,
                                     targetName + " にTPAリクエストを送りました。",
                                     "Sent TPA request to " + targetName);
 
                             target.sendMessage(Text.literal(requester.getName().getString()
                                     + " があなたにテレポートしようとしています。/tpa accept または /tpa deny を入力してください。"), false);
+                            target.sendMessage(Text.literal(requester.getName().getString()
+                                    + " wants to teleport to you. Type /tpa accept or /tpa deny."), false);
 
                             return 1;
                         })
