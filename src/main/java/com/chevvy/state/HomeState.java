@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ModState {
+public class HomeState {
 
     private static final Map<UUID, Map<String, Home>> homes = new ConcurrentHashMap<>();
 
@@ -80,7 +80,7 @@ public class ModState {
             ChevvyEssentials.LOGGER.error("Failed to load homes data", e);
         }
 
-        ServerLifecycleEvents.SERVER_STOPPING.register(ModState::onServerStopping);
+        ServerLifecycleEvents.SERVER_STOPPING.register(HomeState::onServerStopping);
     }
 
     private static void onServerStopping(MinecraftServer server) {
