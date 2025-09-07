@@ -35,8 +35,8 @@ public class TpaHereCommand {
                             ServerPlayerEntity target = Objects.requireNonNull(requester.getServer()).getPlayerManager().getPlayer(targetName);
                             if (target == null) {
                                 CommandUtils.sendBilingual(requester,
-                                        Text.empty().append(Text.literal("プレイヤーが見つかりません: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)),
-                                        Text.empty().append(Text.literal("Player not found: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)));
+                                        Text.empty().append(Text.literal("プレイヤーが見つかりません: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.AQUA)),
+                                        Text.empty().append(Text.literal("Player not found: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.AQUA)));
                                 return 0;
                             }
 
@@ -50,20 +50,20 @@ public class TpaHereCommand {
                             TpaState.createTpaHereRequest(requester, target);
 
                             CommandUtils.sendBilingual(requester,
-                                    Text.empty().append(Text.literal(targetName).formatted(Formatting.GREEN)).append(Text.literal("さんにTPAHEREリクエストを送りました。").formatted(Formatting.GRAY)),
-                                    Text.empty().append(Text.literal("Sent TPAHERE request to ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)));
+                                    Text.empty().append(Text.literal(targetName).formatted(Formatting.AQUA)).append(Text.literal("さんにTPAHEREリクエストを送りました。").formatted(Formatting.GRAY)),
+                                    Text.empty().append(Text.literal("Sent TPAHERE request to ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.AQUA)));
 
-                            target.sendMessage(Text.empty().append(Text.literal(requester.getName().getString()).formatted(Formatting.GREEN))
+                            target.sendMessage(Text.empty().append(Text.literal(requester.getName().getString()).formatted(Formatting.AQUA))
                                     .append(Text.literal("さんがあなたを呼んでいます。").formatted(Formatting.GRAY))
-                                    .append(Text.literal("/tpa accept").formatted(Formatting.AQUA))
+                                    .append(Text.literal("/tpa accept").formatted(Formatting.YELLOW))
                                     .append(Text.literal(" または ").formatted(Formatting.GRAY))
-                                    .append(Text.literal("/tpa deny").formatted(Formatting.AQUA))
+                                    .append(Text.literal("/tpa deny").formatted(Formatting.YELLOW))
                                     .append(Text.literal(" を入力してください。").formatted(Formatting.GRAY)));
-                            target.sendMessage(Text.empty().append(Text.literal(requester.getName().getString()).formatted(Formatting.GREEN))
+                            target.sendMessage(Text.empty().append(Text.literal(requester.getName().getString()).formatted(Formatting.AQUA))
                                     .append(Text.literal(" wants you to teleport to them. Type ").formatted(Formatting.GRAY))
-                                    .append(Text.literal("/tpa accept").formatted(Formatting.AQUA))
+                                    .append(Text.literal("/tpa accept").formatted(Formatting.YELLOW))
                                     .append(Text.literal(" or ").formatted(Formatting.GRAY))
-                                    .append(Text.literal("/tpa deny").formatted(Formatting.AQUA))
+                                    .append(Text.literal("/tpa deny").formatted(Formatting.YELLOW))
                                     .append(Text.literal(".").formatted(Formatting.GRAY)));
 
                             return 1;

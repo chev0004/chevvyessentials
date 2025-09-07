@@ -60,27 +60,27 @@ public class TpaManager {
 
                     if (target != null) {
                         CommandUtils.sendBilingual(target,
-                                Text.empty().append(Text.literal(requesterName).formatted(Formatting.GREEN))
+                                Text.empty().append(Text.literal(requesterName).formatted(Formatting.AQUA))
                                         .append(Text.literal("さんからのTPAリクエストは").formatted(Formatting.GRAY))
-                                        .append(Text.literal(String.valueOf(timeoutSeconds)).formatted(Formatting.GREEN))
+                                        .append(Text.literal(String.valueOf(timeoutSeconds)).formatted(Formatting.AQUA))
                                         .append(Text.literal("秒後に期限切れになりました。").formatted(Formatting.GRAY)),
                                 Text.empty().append(Text.literal("The TPA request from ").formatted(Formatting.GRAY))
-                                        .append(Text.literal(requesterName).formatted(Formatting.GREEN))
+                                        .append(Text.literal(requesterName).formatted(Formatting.AQUA))
                                         .append(Text.literal(" expired after ").formatted(Formatting.GRAY))
-                                        .append(Text.literal(String.valueOf(timeoutSeconds)).formatted(Formatting.GREEN))
+                                        .append(Text.literal(String.valueOf(timeoutSeconds)).formatted(Formatting.AQUA))
                                         .append(Text.literal(" seconds.").formatted(Formatting.GRAY))
                         );
                     }
                     if (originalRequester != null) {
                         CommandUtils.sendBilingual(originalRequester,
-                                Text.empty().append(Text.literal(targetName).formatted(Formatting.GREEN))
+                                Text.empty().append(Text.literal(targetName).formatted(Formatting.AQUA))
                                         .append(Text.literal("さんへのTPAリクエストは").formatted(Formatting.GRAY))
-                                        .append(Text.literal(String.valueOf(timeoutSeconds)).formatted(Formatting.GREEN))
+                                        .append(Text.literal(String.valueOf(timeoutSeconds)).formatted(Formatting.AQUA))
                                         .append(Text.literal("秒後にタイムアウトしました。").formatted(Formatting.GRAY)),
                                 Text.empty().append(Text.literal("Your TPA request to ").formatted(Formatting.GRAY))
-                                        .append(Text.literal(targetName).formatted(Formatting.GREEN))
+                                        .append(Text.literal(targetName).formatted(Formatting.AQUA))
                                         .append(Text.literal(" timed out after ").formatted(Formatting.GRAY))
-                                        .append(Text.literal(String.valueOf(timeoutSeconds)).formatted(Formatting.GREEN))
+                                        .append(Text.literal(String.valueOf(timeoutSeconds)).formatted(Formatting.AQUA))
                                         .append(Text.literal(" seconds.").formatted(Formatting.GRAY))
                         );
                     }

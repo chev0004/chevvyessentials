@@ -22,10 +22,10 @@ public class PlayerDeathHandler {
                 // This message will appear in their chat upon respawning.
                 CommandUtils.sendBilingual(player,
                         Text.literal("死亡した場所が保存されました。").formatted(Formatting.GRAY)
-                                .append(Text.literal("/death").formatted(Formatting.AQUA))
+                                .append(Text.literal("/death").formatted(Formatting.YELLOW))
                                 .append(Text.literal(" で戻ることができます。").formatted(Formatting.GRAY)),
                         Text.literal("Your death location has been saved. Use ").formatted(Formatting.GRAY)
-                                .append(Text.literal("/death").formatted(Formatting.AQUA))
+                                .append(Text.literal("/death").formatted(Formatting.YELLOW))
                                 .append(Text.literal(" to return.").formatted(Formatting.GRAY))
                 );
             }

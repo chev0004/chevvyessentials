@@ -24,10 +24,10 @@ public class HomesCommand {
                     if (homes.isEmpty()) {
                         CommandUtils.sendBilingual(player,
                                 Text.empty().append(Text.literal("ホームが設定されていません。").formatted(Formatting.GRAY))
-                                        .append(Text.literal("/sethome <name>").formatted(Formatting.AQUA))
+                                        .append(Text.literal("/sethome <name>").formatted(Formatting.YELLOW))
                                         .append(Text.literal(" を使用してください。").formatted(Formatting.GRAY)),
                                 Text.empty().append(Text.literal("You have no homes set. Use ").formatted(Formatting.GRAY))
-                                        .append(Text.literal("/sethome <name>").formatted(Formatting.AQUA))
+                                        .append(Text.literal("/sethome <name>").formatted(Formatting.YELLOW))
                                         .append(Text.literal(".").formatted(Formatting.GRAY))
                         );
                     } else {
