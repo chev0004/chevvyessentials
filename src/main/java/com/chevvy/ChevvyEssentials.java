@@ -4,11 +4,13 @@ import com.chevvy.commands.homes.*;
 import com.chevvy.commands.death.DeathCommand;
 import com.chevvy.commands.teleport.TpaCommand;
 import com.chevvy.commands.teleport.TpaHereCommand;
+import com.chevvy.commands.vote.CvCommand;
 import com.chevvy.config.ModConfig;
 import com.chevvy.events.PlayerDeathHandler;
 import com.chevvy.state.DeathState;
 import com.chevvy.state.HomeState;
 import com.chevvy.util.TpaManager;
+import com.chevvy.util.VoteManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import org.slf4j.Logger;
@@ -25,6 +27,7 @@ public class ChevvyEssentials implements ModInitializer {
         TpaManager.initialize();
         DeathState.initialize();
         PlayerDeathHandler.register();
+        VoteManager.initialize();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             LOGGER.info("Registering commands for " + MOD_ID);
@@ -38,6 +41,9 @@ public class ChevvyEssentials implements ModInitializer {
             // Teleport Commands
             TpaCommand.register(dispatcher);
             TpaHereCommand.register(dispatcher);
+
+            // Vote Commands
+            CvCommand.register(dispatcher);
 
             // Misc Commands
             DeathCommand.register(dispatcher);
