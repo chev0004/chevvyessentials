@@ -10,6 +10,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.RespawnAnchorBlock;
 import net.minecraft.command.CommandSource;
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -42,14 +43,20 @@ public class HomeCommand {
                 .executes(context -> {
                     ServerPlayerEntity player = context.getSource().getPlayer();
                     if (player == null) return 0;
+
+                    MinecraftServer server = context.getSource().getServer();
+
                     if (player.getRespawn() == null) {
                         CommandUtils.sendBilingual(player,
                                 Text.literal("ホームベッドが設定されていません。ベッドを使ってスポーンポイントを設定してください。").formatted(Formatting.GRAY),
                                 Text.literal("You have no home bed set. Use a bed to set your spawn point.").formatted(Formatting.GRAY));
                         return 0;
                     }
-                    BlockPos bedPos = player.getRespawn().pos();
-                    ServerWorld world = Objects.requireNonNull(player.getServer()).getWorld(player.getRespawn().dimension());
+
+                    BlockPos bedPos = player.getRespawn().respawnData().getPos();
+
+                    ServerWorld world = server.getWorld(player.getRespawn().respawnData().getDimension());
+
                     if (bedPos == null || world == null) {
                         CommandUtils.sendBilingual(player,
                                 Text.literal("ホームベッドが設定されていません。ベッドを使ってスポーンポイントを設定してください。").formatted(Formatting.GRAY),
@@ -66,7 +73,7 @@ public class HomeCommand {
                     }
                     Optional<Vec3d> safePosition;
                     if (stateAtSpawn.getBlock() instanceof BedBlock) {
-                        safePosition = BedBlock.findWakeUpPosition(player.getType(), world, bedPos, stateAtSpawn.get(BedBlock.FACING), player.getRespawn().angle());
+                        safePosition = BedBlock.findWakeUpPosition(player.getType(), world, bedPos, stateAtSpawn.get(BedBlock.FACING), player.getRespawn().respawnData().yaw());
                     } else {
                         safePosition = findSafeSpawnAround(bedPos, world);
                     }
@@ -91,11 +98,14 @@ public class HomeCommand {
                             ServerPlayerEntity player = context.getSource().getPlayer();
                             if (player == null) return 0;
 
+                            MinecraftServer server = context.getSource().getServer();
+
                             String homeName = StringArgumentType.getString(context, "name");
                             Home home = HomeState.getHome(player.getUuid(), homeName);
 
                             if (home != null) {
-                                ServerWorld world = Objects.requireNonNull(player.getServer()).getWorld(home.dimension());
+                                ServerWorld world = server.getWorld(home.dimension());
+
                                 Vec3d pos = home.pos();
                                 if (world != null) {
                                     player.teleport(world, pos.getX(), pos.getY(), pos.getZ(),

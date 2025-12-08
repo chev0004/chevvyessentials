@@ -6,6 +6,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.command.CommandSource;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -24,9 +25,12 @@ public class TpaCommand {
             ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
             Map<UUID, TpaState.TpaRequest> requests = TpaState.getRequestsForPlayer(player.getUuid());
             List<String> requesters = new ArrayList<>();
+            MinecraftServer server = context.getSource().getServer();
             for (UUID requesterUuid : requests.keySet()) {
-                Objects.requireNonNull(context.getSource().getServer().getUserCache()).getByUuid(requesterUuid)
-                        .ifPresent(profile -> requesters.add(profile.getName()));
+                ServerPlayerEntity onlinePlayer = server.getPlayerManager().getPlayer(requesterUuid);
+                if (onlinePlayer != null) {
+                    requesters.add(onlinePlayer.getName().getString());
+                }
             }
             return CommandSource.suggestMatching(requesters, builder);
         };
@@ -45,7 +49,7 @@ public class TpaCommand {
                             if (requester == null) return 0;
 
                             String targetName = StringArgumentType.getString(context, "player");
-                            ServerPlayerEntity target = Objects.requireNonNull(requester.getServer()).getPlayerManager().getPlayer(targetName);
+                            ServerPlayerEntity target = context.getSource().getServer().getPlayerManager().getPlayer(targetName);
                             if (target == null) {
                                 CommandUtils.sendBilingual(requester,
                                         Text.empty().append(Text.literal("プレイヤーが見つかりません: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)),
@@ -113,6 +117,8 @@ public class TpaCommand {
         ServerPlayerEntity player = source.getPlayer();
         if (player == null) return 0;
 
+        MinecraftServer server = source.getServer();
+
         Map<UUID, TpaState.TpaRequest> requests = TpaState.getRequestsForPlayer(player.getUuid());
 
         if (requests.isEmpty()) {
@@ -123,8 +129,9 @@ public class TpaCommand {
         TpaState.TpaRequest requestToProcess = null;
 
         if (requesterName != null) {
-            UUID requesterUuid = Objects.requireNonNull(source.getServer().getUserCache()).findByName(requesterName).map(GameProfile::getId).orElse(null);
-            if (requesterUuid != null) {
+            ServerPlayerEntity onlinePlayer = server.getPlayerManager().getPlayer(requesterName);
+            if (onlinePlayer != null) {
+                UUID requesterUuid = onlinePlayer.getUuid();
                 requestToProcess = requests.get(requesterUuid);
             }
             if (requestToProcess == null) {
@@ -137,7 +144,10 @@ public class TpaCommand {
         } else {
             if (requests.size() > 1) {
                 String pendingRequesters = requests.keySet().stream()
-                        .map(uuid -> Objects.requireNonNull(source.getServer().getUserCache()).getByUuid(uuid).map(GameProfile::getName).orElse(null))
+                        .map(uuid -> {
+                            ServerPlayerEntity onlinePlayer = server.getPlayerManager().getPlayer(uuid);
+                            return onlinePlayer != null ? onlinePlayer.getName().getString() : null;
+                        })
                         .filter(Objects::nonNull)
                         .collect(Collectors.joining(", "));
                 String command = accept ? "/tpa accept <player>" : "/tpa deny <player>";
@@ -159,22 +169,22 @@ public class TpaCommand {
         }
 
         if (accept) {
-            return acceptRequest(player, requestToProcess);
+            return acceptRequest(server, player, requestToProcess);
         } else {
-            return denyRequest(player, requestToProcess);
+            return denyRequest(server, player, requestToProcess);
         }
     }
 
-    private static int acceptRequest(ServerPlayerEntity acceptor, TpaState.TpaRequest request) {
-        ServerPlayerEntity source = Objects.requireNonNull(acceptor.getServer()).getPlayerManager().getPlayer(request.sourcePlayer());
-        ServerPlayerEntity destination = Objects.requireNonNull(acceptor.getServer()).getPlayerManager().getPlayer(request.destinationPlayer());
+    private static int acceptRequest(MinecraftServer server, ServerPlayerEntity acceptor, TpaState.TpaRequest request) {
+        ServerPlayerEntity source = server.getPlayerManager().getPlayer(request.sourcePlayer());
+        ServerPlayerEntity destination = server.getPlayerManager().getPlayer(request.destinationPlayer());
 
         if (source == null || destination == null) {
             CommandUtils.sendBilingual(acceptor,
                     Text.literal("リクエストに関係するプレイヤーが見つかりません。").formatted(Formatting.GRAY),
                     Text.literal("A player involved in the request could not be found.").formatted(Formatting.GRAY));
         } else {
-            source.teleport(destination.getWorld(), destination.getX(), destination.getY(), destination.getZ(),
+            source.teleport(destination.getEntityWorld(), destination.getX(), destination.getY(), destination.getZ(),
                     Collections.emptySet(), source.getYaw(), source.getPitch(), false);
 
             CommandUtils.sendBilingual(source,
@@ -189,16 +199,11 @@ public class TpaCommand {
         return 1;
     }
 
-    private static int denyRequest(ServerPlayerEntity denier, TpaState.TpaRequest request) {
-        ServerPlayerEntity originalRequester = Objects.requireNonNull(denier.getServer()).getPlayerManager().getPlayer(request.originalRequester());
+    private static int denyRequest(MinecraftServer server, ServerPlayerEntity denier, TpaState.TpaRequest request) {
+        ServerPlayerEntity originalRequester = server.getPlayerManager().getPlayer(request.originalRequester());
         String requesterName = "Someone";
         if (originalRequester != null) {
             requesterName = originalRequester.getName().getString();
-        } else {
-            Optional<GameProfile> gameProfile = Objects.requireNonNull(denier.getServer().getUserCache()).getByUuid(request.originalRequester());
-            if (gameProfile.isPresent()) {
-                requesterName = gameProfile.get().getName();
-            }
         }
 
         if (originalRequester != null) {

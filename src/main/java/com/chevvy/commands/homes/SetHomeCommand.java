@@ -41,8 +41,8 @@ public class SetHomeCommand {
                                 return 0;
                             }
 
-                            Vec3d pos = player.getPos();
-                            ServerWorld world = player.getWorld();
+                            Vec3d pos = new Vec3d(player.getX(), player.getY(), player.getZ());
+                            ServerWorld world = player.getEntityWorld();
                             RegistryKey<World> dimension = world.getRegistryKey();
 
                             Home newHome = new Home(pos, dimension);

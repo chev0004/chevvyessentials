@@ -2,7 +2,6 @@ package com.chevvy.util;
 
 import com.chevvy.config.ModConfig;
 import com.chevvy.state.TpaState;
-import com.mojang.authlib.GameProfile;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -11,7 +10,6 @@ import net.minecraft.util.Formatting;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -20,12 +18,10 @@ public class TpaManager {
     private static final AtomicInteger tickCounter = new AtomicInteger(0);
 
     public static void initialize() {
-        // Register a server tick event listener
         ServerTickEvents.END_SERVER_TICK.register(TpaManager::onServerTick);
     }
 
     private static void onServerTick(MinecraftServer server) {
-        // Only run the check once per second (20 ticks) to avoid performance issues
         if (tickCounter.incrementAndGet() >= 20) {
             tickCounter.set(0);
             checkExpiredRequests(server);
@@ -37,7 +33,6 @@ public class TpaManager {
         long timeoutMillis = timeoutSeconds * 1000L;
         long currentTime = System.currentTimeMillis();
 
-        // Use a copy of the keys to prevent ConcurrentModificationException
         for (UUID targetUuid : new ArrayList<>(TpaState.getPendingRequests().keySet())) {
             Map<UUID, TpaState.TpaRequest> playerRequests = TpaState.getRequestsForPlayer(targetUuid);
             if (playerRequests.isEmpty()) continue;
@@ -47,16 +42,13 @@ public class TpaManager {
                 if (request == null) continue;
 
                 if (currentTime - request.creationTime() > timeoutMillis) {
-                    // The request has expired, clear it and notify players
                     TpaState.clearRequest(targetUuid, requesterUuid);
-
-                    String requesterName = Objects.requireNonNull(server.getUserCache()).getByUuid(request.originalRequester())
-                            .map(GameProfile::getName).orElse("Someone");
-                    String targetName = server.getUserCache().getByUuid(targetUuid)
-                            .map(GameProfile::getName).orElse("Someone");
 
                     ServerPlayerEntity target = server.getPlayerManager().getPlayer(targetUuid);
                     ServerPlayerEntity originalRequester = server.getPlayerManager().getPlayer(request.originalRequester());
+                    
+                    String requesterName = originalRequester != null ? originalRequester.getName().getString() : "Someone";
+                    String targetName = target != null ? target.getName().getString() : "Someone";
 
                     if (target != null) {
                         CommandUtils.sendBilingual(target,
