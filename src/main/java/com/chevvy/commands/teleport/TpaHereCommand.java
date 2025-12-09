@@ -12,8 +12,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
-import java.util.Objects;
-
 public class TpaHereCommand {
     public static void register(com.mojang.brigadier.CommandDispatcher<ServerCommandSource> dispatcher) {
         SuggestionProvider<ServerCommandSource> playerSuggestions = (context, builder) ->
@@ -40,13 +38,9 @@ public class TpaHereCommand {
         String targetName = StringArgumentType.getString(context, "player");
         ServerPlayerEntity target = context.getSource().getServer().getPlayerManager().getPlayer(targetName);
 
-        if (target == null) {
-            CommandUtils.sendBilingual(requester,
-                    Text.empty().append(Text.literal("プレイヤーが見つかりません: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)),
-                    Text.empty().append(Text.literal("Player not found: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)));
-            return 0;
-        }
+        if (TpaCommand.handleTargetNotFound(requester, targetName, target)) return 0;
 
+        assert target != null;
         if (target.getUuid().equals(requester.getUuid())) {
             CommandUtils.sendBilingual(requester,
                     Text.literal("自分自身をここに呼ぶことはできません。").formatted(Formatting.GRAY),

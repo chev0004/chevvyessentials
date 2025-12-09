@@ -2,11 +2,14 @@ package com.chevvy;
 
 import com.chevvy.commands.death.DeathCommand;
 import com.chevvy.commands.homes.*;
+import com.chevvy.commands.teleport.BackCommand;
+import com.chevvy.commands.teleport.SpawnCommand;
 import com.chevvy.commands.teleport.TpaCommand;
 import com.chevvy.commands.teleport.TpaHereCommand;
 import com.chevvy.commands.vote.CvCommand;
 import com.chevvy.config.ModConfig;
 import com.chevvy.events.PlayerDeathHandler;
+import com.chevvy.state.BackState;
 import com.chevvy.state.DeathState;
 import com.chevvy.state.HomeState;
 import com.chevvy.util.TpaManager;
@@ -27,6 +30,7 @@ public class ChevvyEssentials implements ModInitializer {
         TpaManager.initialize();
         
         DeathState.initialize();
+        BackState.initialize();
         PlayerDeathHandler.register();
         VoteManager.initialize();
 
@@ -42,6 +46,8 @@ public class ChevvyEssentials implements ModInitializer {
             // Teleport Commands
             TpaCommand.register(dispatcher);
             TpaHereCommand.register(dispatcher);
+            SpawnCommand.register(dispatcher);
+            BackCommand.register(dispatcher);
 
             // Vote Commands
             CvCommand.register(dispatcher);

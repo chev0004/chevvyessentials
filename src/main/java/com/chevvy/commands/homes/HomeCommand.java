@@ -1,6 +1,7 @@
 package com.chevvy.commands.homes;
 
 import com.chevvy.Home;
+import com.chevvy.commands.teleport.BackCommand;
 import com.chevvy.state.HomeState;
 import com.chevvy.util.CommandUtils;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -80,7 +81,8 @@ public class HomeCommand {
 
                     if (safePosition.isPresent()) {
                         Vec3d pos = safePosition.get();
-                        player.teleport(world, pos.getX(), pos.getY(), pos.getZ(), Collections.emptySet(), player.getYaw(), player.getPitch(), false);
+                        // Save the current position before teleporting
+                        BackCommand.saveBackLocation(player, world, pos);
                         CommandUtils.sendBilingual(player,
                                 Text.literal("ホームベッドにテレポートしました！").formatted(Formatting.GRAY),
                                 Text.literal("Teleported to your home bed!").formatted(Formatting.GRAY));
@@ -108,8 +110,8 @@ public class HomeCommand {
 
                                 Vec3d pos = home.pos();
                                 if (world != null) {
-                                    player.teleport(world, pos.getX(), pos.getY(), pos.getZ(),
-                                            Collections.emptySet(), player.getYaw(), player.getPitch(), false);
+                                    // Save the current position before teleporting
+                                    BackCommand.saveBackLocation(player, world, pos);
                                     CommandUtils.sendBilingual(player,
                                             Text.empty().append(Text.literal("ホーム「").formatted(Formatting.GRAY))
                                                     .append(Text.literal(homeName).formatted(Formatting.GREEN))

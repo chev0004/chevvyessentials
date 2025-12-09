@@ -1,9 +1,11 @@
 package com.chevvy.commands.teleport;
 
+import com.chevvy.BackLocation;
+import com.chevvy.state.BackState;
 import com.chevvy.state.TpaState;
 import com.chevvy.util.CommandUtils;
-import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.MinecraftServer;
@@ -12,6 +14,8 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.math.Vec3d;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,53 +41,14 @@ public class TpaCommand {
 
         dispatcher.register(CommandManager.literal("tpa")
                 .executes(context -> {
-                    ServerPlayerEntity player = context.getSource().getPlayer();
+                    ServerPlayerEntity player = getServerPlayerEntity(context);
                     if (player == null) return 0;
                     sendTpaHelp(player);
                     return 1;
                 })
                 .then(CommandManager.argument("player", StringArgumentType.word())
                         .suggests(playerSuggestions)
-                        .executes(context -> {
-                            ServerPlayerEntity requester = context.getSource().getPlayer();
-                            if (requester == null) return 0;
-
-                            String targetName = StringArgumentType.getString(context, "player");
-                            ServerPlayerEntity target = context.getSource().getServer().getPlayerManager().getPlayer(targetName);
-                            if (target == null) {
-                                CommandUtils.sendBilingual(requester,
-                                        Text.empty().append(Text.literal("プレイヤーが見つかりません: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)),
-                                        Text.empty().append(Text.literal("Player not found: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)));
-                                return 0;
-                            }
-
-                            if (target.getUuid().equals(requester.getUuid())) {
-                                CommandUtils.sendBilingual(requester,
-                                        Text.literal("自分自身にはテレポートできません。").formatted(Formatting.GRAY),
-                                        Text.literal("You can’t send a TPA request to yourself.").formatted(Formatting.GRAY));
-                                return 0;
-                            }
-
-                            TpaState.createTpaRequest(requester, target);
-                            CommandUtils.sendBilingual(requester,
-                                    Text.empty().append(Text.literal(targetName).formatted(Formatting.GREEN)).append(Text.literal("さんにTPAリクエストを送りました。").formatted(Formatting.GRAY)),
-                                    Text.empty().append(Text.literal("Sent TPA request to ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)));
-
-                            target.sendMessage(Text.empty().append(Text.literal(requester.getName().getString()).formatted(Formatting.GREEN))
-                                    .append(Text.literal("さんがあなたにテレポートしようとしています。").formatted(Formatting.GRAY))
-                                    .append(Text.literal("/tpa accept").formatted(Formatting.AQUA))
-                                    .append(Text.literal(" または ").formatted(Formatting.GRAY))
-                                    .append(Text.literal("/tpa deny").formatted(Formatting.AQUA))
-                                    .append(Text.literal(" を入力してください。").formatted(Formatting.GRAY)));
-                            target.sendMessage(Text.empty().append(Text.literal(requester.getName().getString()).formatted(Formatting.GREEN))
-                                    .append(Text.literal(" wants to teleport to you. Type ").formatted(Formatting.GRAY))
-                                    .append(Text.literal("/tpa accept").formatted(Formatting.AQUA))
-                                    .append(Text.literal(" or ").formatted(Formatting.GRAY))
-                                    .append(Text.literal("/tpa deny").formatted(Formatting.AQUA))
-                                    .append(Text.literal(".").formatted(Formatting.GRAY)));
-
-                            return 1;
-                        }))
+                        .executes(TpaCommand::run))
                 .then(CommandManager.literal("accept")
                         .executes(context -> executeResponse(context.getSource(), null, true))
                         .then(CommandManager.argument("player", StringArgumentType.word())
@@ -95,6 +60,10 @@ public class TpaCommand {
                                 .suggests(pendingRequestSuggestionProvider)
                                 .executes(context -> executeResponse(context.getSource(), StringArgumentType.getString(context, "player"), false))))
         );
+    }
+
+    private static @Nullable ServerPlayerEntity getServerPlayerEntity(CommandContext<ServerCommandSource> context) {
+        return context.getSource().getPlayer();
     }
 
     public static void sendTpaHelp(ServerPlayerEntity player) {
@@ -184,6 +153,11 @@ public class TpaCommand {
                     Text.literal("リクエストに関係するプレイヤーが見つかりません。").formatted(Formatting.GRAY),
                     Text.literal("A player involved in the request could not be found.").formatted(Formatting.GRAY));
         } else {
+            // Save the current position before teleporting
+            Vec3d currentPos = new Vec3d(source.getX(), source.getY(), source.getZ());
+            BackLocation backLocation = new BackLocation(currentPos, source.getEntityWorld().getRegistryKey());
+            BackState.setBackLocation(source.getUuid(), backLocation);
+            
             source.teleport(destination.getEntityWorld(), destination.getX(), destination.getY(), destination.getZ(),
                     Collections.emptySet(), source.getYaw(), source.getPitch(), false);
 
@@ -217,5 +191,52 @@ public class TpaCommand {
 
         TpaState.clearRequest(denier.getUuid(), request.originalRequester());
         return 1;
+    }
+
+    private static int run(CommandContext<ServerCommandSource> context) {
+        ServerPlayerEntity requester = getServerPlayerEntity(context);
+        if (requester == null) return 0;
+
+        var targetName = StringArgumentType.getString(context, "player");
+        var target = context.getSource().getServer().getPlayerManager().getPlayer(targetName);
+        if (handleTargetNotFound(requester, targetName, target)) return 0;
+
+        assert target != null;
+        if (target.getUuid().equals(requester.getUuid())) {
+            CommandUtils.sendBilingual(requester,
+                    Text.literal("自分自身にはテレポートできません。").formatted(Formatting.GRAY),
+                    Text.literal("You can’t send a TPA request to yourself.").formatted(Formatting.GRAY));
+            return 0;
+        }
+
+        TpaState.createTpaRequest(requester, target);
+        CommandUtils.sendBilingual(requester,
+                Text.empty().append(Text.literal(targetName).formatted(Formatting.GREEN)).append(Text.literal("さんにTPAリクエストを送りました。").formatted(Formatting.GRAY)),
+                Text.empty().append(Text.literal("Sent TPA request to ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)));
+
+        target.sendMessage(Text.empty().append(Text.literal(requester.getName().getString()).formatted(Formatting.GREEN))
+                .append(Text.literal("さんがあなたにテレポートしようとしています。").formatted(Formatting.GRAY))
+                .append(Text.literal("/tpa accept").formatted(Formatting.AQUA))
+                .append(Text.literal(" または ").formatted(Formatting.GRAY))
+                .append(Text.literal("/tpa deny").formatted(Formatting.AQUA))
+                .append(Text.literal(" を入力してください。").formatted(Formatting.GRAY)));
+        target.sendMessage(Text.empty().append(Text.literal(requester.getName().getString()).formatted(Formatting.GREEN))
+                .append(Text.literal(" wants to teleport to you. Type ").formatted(Formatting.GRAY))
+                .append(Text.literal("/tpa accept").formatted(Formatting.AQUA))
+                .append(Text.literal(" or ").formatted(Formatting.GRAY))
+                .append(Text.literal("/tpa deny").formatted(Formatting.AQUA))
+                .append(Text.literal(".").formatted(Formatting.GRAY)));
+
+        return 1;
+    }
+
+    static boolean handleTargetNotFound(ServerPlayerEntity requester, String targetName, ServerPlayerEntity target) {
+        if (target == null) {
+            CommandUtils.sendBilingual(requester,
+                    Text.empty().append(Text.literal("プレイヤーが見つかりません: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)),
+                    Text.empty().append(Text.literal("Player not found: ").formatted(Formatting.GRAY)).append(Text.literal(targetName).formatted(Formatting.GREEN)));
+            return true;
+        }
+        return false;
     }
 }

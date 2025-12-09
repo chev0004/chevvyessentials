@@ -1,6 +1,7 @@
 package com.chevvy.commands.death;
 
 import com.chevvy.DeathLocation;
+import com.chevvy.commands.teleport.BackCommand;
 import com.chevvy.state.DeathState;
 import com.chevvy.util.CommandUtils;
 import com.mojang.brigadier.CommandDispatcher;
@@ -12,7 +13,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
 
-import java.util.Collections;
 import java.util.Objects;
 
 public class DeathCommand {
@@ -29,8 +29,8 @@ public class DeathCommand {
                         Vec3d pos = deathLocation.pos();
 
                         if (world != null) {
-                            player.teleport(world, pos.getX(), pos.getY(), pos.getZ(),
-                                    Collections.emptySet(), player.getYaw(), player.getPitch(), false);
+                            // Save the current position before teleporting
+                            BackCommand.saveBackLocation(player, world, pos);
 
                             CommandUtils.sendBilingual(player,
                                     Text.literal("最後の死亡場所に戻りました。").formatted(Formatting.GRAY),
