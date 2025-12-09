@@ -22,10 +22,14 @@ public class ModConfig {
     public static class ConfigData {
         public int maxHomes;
         public int tpaTimeoutSeconds;
+        public int voteThresholdPercent;
+        public int voteTimeoutSeconds;
 
         private ConfigData() {
             this.maxHomes = 5;
             this.tpaTimeoutSeconds = 60;
+            this.voteThresholdPercent = 70;
+            this.voteTimeoutSeconds = 60;
         }
     }
 

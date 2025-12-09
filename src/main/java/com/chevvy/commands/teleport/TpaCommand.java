@@ -100,16 +100,16 @@ public class TpaCommand {
     public static void sendTpaHelp(ServerPlayerEntity player) {
         player.sendMessage(Text.literal("--- ChevvyEssentials TPA Help ---").formatted(Formatting.GOLD));
         player.sendMessage(Text.literal("/tpa <player>").formatted(Formatting.AQUA));
-        player.sendMessage(Text.literal("  プレイヤーにテレポートリクエストを送信します。").formatted(Formatting.WHITE));
+        player.sendMessage(Text.literal("  プレイヤーにテレポートリクエストを送信する。").formatted(Formatting.GRAY));
         player.sendMessage(Text.literal("  Sends a teleport request to a player.").formatted(Formatting.GRAY));
         player.sendMessage(Text.literal("/tpahere <player>").formatted(Formatting.AQUA));
-        player.sendMessage(Text.literal("  プレイヤーにあなたの場所へのテレポートをリクエストします。").formatted(Formatting.WHITE));
+        player.sendMessage(Text.literal("  プレイヤーにあなたの場所へのテレポートをリクエストする。").formatted(Formatting.GRAY));
         player.sendMessage(Text.literal("  Requests a player to teleport to your location.").formatted(Formatting.GRAY));
         player.sendMessage(Text.literal("/tpa accept [player]").formatted(Formatting.AQUA));
-        player.sendMessage(Text.literal("  保留中のテレポートリクエストを承認します。").formatted(Formatting.WHITE));
+        player.sendMessage(Text.literal("  保留中のテレポートリクエストを承認する。").formatted(Formatting.GRAY));
         player.sendMessage(Text.literal("  Accepts a pending teleport request.").formatted(Formatting.GRAY));
         player.sendMessage(Text.literal("/tpa deny [player]").formatted(Formatting.AQUA));
-        player.sendMessage(Text.literal("  保留中のテレポートリクエストを拒否します。").formatted(Formatting.WHITE));
+        player.sendMessage(Text.literal("  保留中のテレポートリクエストを拒否する。").formatted(Formatting.GRAY));
         player.sendMessage(Text.literal("  Denies a pending teleport request.").formatted(Formatting.GRAY));
     }
 
